@@ -1,11 +1,7 @@
-// problema4
-
-// Programa correspondiente al problema 4, el muestra un tablero de ajedrez desarrollado con OpenGL,
-// cuyas piezas son ingresadas en modo de texto, a travez de la cadena initPosition
-
 #include <iostream>
-#include <stdlib.h>
 #include <string>
+#include <ctype.h>
+#include "glUtils/imageloader.h"
 
 #ifdef __APPLE__
 #include <OpenGL/OpenGL.h>
@@ -14,16 +10,12 @@
 #include <GL/glut.h>
 #endif
 
-#define NDEBUG
-
-#include "glUtils/imageloader.h"
-
 using namespace std;
 
-//Cadena que se lee al iniciar
-string orden;
-//vector equivalente
-char letras[64];
+static const int CHESS_SIZE = 8;
+static const int CHESS_PIECES_COUNT = 64;
+
+string parsedInitPositions;
 
 void handleKeypress( unsigned char key, int x, int y )
 {
@@ -57,7 +49,6 @@ GLuint _reinan;
 GLuint _reyb;
 GLuint _reyn;
 
-
 void initRendering()
 {
 	glEnable( GL_DEPTH_TEST );
@@ -65,9 +56,9 @@ void initRendering()
 	glEnable( GL_LIGHT0 );
 	glEnable( GL_NORMALIZE );
 	glEnable( GL_COLOR_MATERIAL );
-	glClearColor( 0.5f, 0.5f, 0.5f, 1.0f );//luz de fondo
+	glClearColor( 0.5f, 0.5f, 0.5f, 1.0f ); // bg color.
 
-	//Cargamos las imagenes correspondientes a las texturas de las piezas
+	// Loading Images.
 	Image* image = loadBMP( "assets/peonb.bmp" );
 	_peonb = loadTexture( image );
 	delete image;
@@ -96,9 +87,9 @@ void initRendering()
 	_caballob = loadTexture( image7 );
 	delete image7;
 
-	Image* image8 = loadBMP( "assets/caballon.bmp" );
-	_caballon = loadTexture( image8 );
-	delete image8;
+	Image* imageCHESS_SIZE = loadBMP( "assets/caballon.bmp" );
+	_caballon = loadTexture( imageCHESS_SIZE );
+	delete imageCHESS_SIZE;
 
 	Image* image9 = loadBMP( "assets/reinab.bmp" );
 	_reinab = loadTexture( image9 );
@@ -125,10 +116,56 @@ void handleResize( int w, int h )
 	gluPerspective( 45.0, (float) w / (float) h, 1.0, 200.0 );
 }
 
-void iniciarEscena()
+void drawPiece( const float x, const float y, const GLuint id )
 {
+	glEnable( GL_TEXTURE_2D );
+	glBindTexture( GL_TEXTURE_2D, id );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
+	glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
+	glBegin( GL_QUADS );
+	glNormal3f( 0.0, 0.0f, 1.0f );
 
-	//Inicializa los La camara y las luces.
+	glTexCoord2f( 0.0f, 0.0f );
+	glVertex3f( x - 0.35f, y - 0.35f, 0.01f );
+
+	glTexCoord2f( 0.0f, 1.0f );
+	glVertex3f( x - 0.35f, y + 0.35f, 0.01f );
+
+	glTexCoord2f( 1.0f, 1.0f );
+	glVertex3f( x + 0.35f, y + 0.35f, 0.01f );
+
+	glTexCoord2f( 1.0f, 0.0f );
+	glVertex3f( x + 0.35f, y - 0.35f, 0.01f );
+	glDisable( GL_TEXTURE_2D );
+	glEnd();
+}
+
+string parseChessInput( const string input )
+{
+	string ans;
+	for ( int i = 0; i < input.length(); i++ )
+	{
+		char c = input[i];
+		if ( isdigit( input[i] ) )
+		{
+			int t = atoi( &c );
+			ans.append( string( t, '*' ) );
+		}
+		else if ( isalpha( input[i] ) )
+		{
+			ans.append( string( 1, c ) );
+		}
+	}
+	if ( ans.size() != CHESS_PIECES_COUNT )
+	{
+		ans.clear();
+	}
+	return ans;
+}
+
+void renderScene()
+{
+	// Initialize camera and lights.
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 
 	glMatrixMode( GL_MODELVIEW );
@@ -144,240 +181,39 @@ void iniciarEscena()
 	glLightfv( GL_LIGHT0, GL_DIFFUSE, directedLight );
 	glLightfv( GL_LIGHT0, GL_POSITION, directedLightPos );
 
-	//Leyenda :
-	/*
-	p = peón
-	r = torre
-	b = alfil
-	n = caballo
-	q = reina
-	k = rey*/
-	int cont = 0, contin;
+	//=========================================================================
 
-	//Creamos un vector equivalente a la cadena initPosition que se ingresa
-	for ( int l = 0; l < orden.length(); l++ )
+	// Creating chess matrix.
+	char matrix[CHESS_SIZE][CHESS_SIZE];
+	for ( int i = 0; i < CHESS_SIZE; i++ )
 	{
-
-		switch ( orden[l] )
+		for ( int j = 0; j < CHESS_SIZE; j++ )
 		{
-			case 'p':
-				contin = cont;
-				cont = cont + 1;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = 'p';
-				}
-				break;
-			case 'r':
-				contin = cont;
-				cont = cont + 1;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = 'r';
-				}
-				break;
-			case 'b':
-				contin = cont;
-				cont = cont + 1;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = 'b';
-				}
-				break;
-			case 'n':
-				contin = cont;
-				cont = cont + 1;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = 'n';
-				}
-				break;
-			case 'q':
-				contin = cont;
-				cont = cont + 1;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = 'q';
-				}
-				break;
-			case 'k':
-				contin = cont;
-				cont = cont + 1;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = 'k';
-				}
-				break;
-
-			case 'P':
-				contin = cont;
-				cont = cont + 1;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = 'P';
-				}
-				break;
-			case 'R':
-				contin = cont;
-				cont = cont + 1;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = 'R';
-				}
-				break;
-			case 'B':
-				contin = cont;
-				cont = cont + 1;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = 'B';
-				}
-				break;
-			case 'N':
-				contin = cont;
-				cont = cont + 1;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = 'N';
-				}
-				break;
-			case 'Q':
-				contin = cont;
-				cont = cont + 1;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = 'Q';
-				}
-				break;
-			case 'K':
-				contin = cont;
-				cont = cont + 1;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = 'K';
-				}
-				break;
-			case '1':
-				contin = cont;
-				cont = cont + 1;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = '*';
-				}
-				break;
-			case '2':
-				contin = cont;
-				cont = cont + 2;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = '*';
-				}
-				break;
-			case '3':
-				contin = cont;
-				cont = cont + 3;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = '*';
-				}
-				break;
-			case '4':
-				contin = cont;
-				cont = cont + 4;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = '*';
-				}
-				break;
-			case '5':
-				contin = cont;
-				cont = cont + 5;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = '*';
-				}
-				break;
-			case '6':
-				contin = cont;
-				cont = cont + 6;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = '*';
-				}
-				break;
-			case '7':
-				contin = cont;
-				cont = cont + 7;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = '*';
-				}
-				break;
-			case '8':
-				contin = cont;
-				cont = cont + 8;
-				for ( int s = contin; s < cont; s++ )
-				{
-					letras[s] = '*';
-				}
-				break;
-
-			default:
-				break;
-
+			matrix[i][j] = parsedInitPositions[i * CHESS_SIZE + j];
 		}
 	}
 
-	//Creamos una matriz equivalente a la cadena initPosition que se ingresa
-	char matlet[8][8];
-	cont = 0;
-	for ( int i = 0; i < 8; i++ )
-	{
-		for ( int j = 0; j < 8; j++ )
-		{
-			matlet[i][j] = letras[cont];
-			cont++;
-		}
-	}
+	/*	p = peón
+		r = torre
+		b = alfil
+		n = caballo
+		q = reina
+		k = rey */
 
-	int matPos[8][8];//representa el tablero
-	int valor = 1, valant = 0;
-	for ( int i = 0; i < 8; i++ )
+	// Drawing cells/pieces.
+	float centrosx[CHESS_SIZE][CHESS_SIZE], centrosy[CHESS_SIZE][CHESS_SIZE];
+	for ( int i = 0; i < CHESS_SIZE; i++ )
 	{
-		for ( int j = 0; j < 8; j++ )
-		{
-			valant = valor;
-			if ( valor == 1 )
-			{
-				matPos[i][j] = 0;
-				valor = 0;
-			}
-			else
-			{
-				matPos[i][j] = 1;
-				valor = 1;
-			}
-			if ( j == 7 )
-			{
-				valor = valant;
-			}
-		}
-	}
-	//calculamos centros de las cuadriculas, y graficamos
-	float centrosx[8][8], centrosy[8][8];
-	for ( int i = 0; i < 8; i++ )
-	{
-		for ( int j = 0; j < 8; j++ )
+		for ( int j = 0; j < CHESS_SIZE; j++ )
 		{
 			glDisable( GL_TEXTURE_2D );
-			centrosy[i][j] = 3.5 - float( i );
-			centrosx[i][j] = float( j ) - 3.5;
+			centrosy[i][j] = 3.5f - i;
+			centrosx[i][j] = float( j ) - 3.5f;
 
-			if ( matPos[i][j] == 0 )
+			if ( ( ( i % 2 ) + ( j % 2 ) ) % 2 == 0 ) // Cell bg color.
 			{
 				glColor3f( 0.960784f, 0.960784f, 0.862745f );
 			}
-
 			else
 			{
 				glColor3f( 1.0f, 0.7f, 0.3f );
@@ -385,300 +221,62 @@ void iniciarEscena()
 
 			glBegin( GL_QUADS );
 			glNormal3f( 0.0, 0.0f, 1.0f );
-
 			glVertex3f( centrosx[i][j] - 0.5f, centrosy[i][j] - 0.5f, 0.0f );
-
 			glVertex3f( centrosx[i][j] - 0.5f, centrosy[i][j] + 0.5f, 0.0f );
-
 			glVertex3f( centrosx[i][j] + 0.5f, centrosy[i][j] + 0.5f, 0.0f );
-
 			glVertex3f( centrosx[i][j] + 0.5f, centrosy[i][j] - 0.5f, 0.0f );
 			glEnd();
 
-
 			glColor3f( 1.0f, 1.0f, 1.0f );
-			switch ( matlet[i][j] )
+			switch ( matrix[i][j] )
 			{
-				///
 				case 'p':
-					glEnable( GL_TEXTURE_2D );
-					glBindTexture( GL_TEXTURE_2D, _peonn );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-					glBegin( GL_QUADS );
-					glNormal3f( 0.0, 0.0f, 1.0f );
-
-					glTexCoord2f( 0.0f, 0.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-
-					glTexCoord2f( 0.0f, 1.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 1.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 0.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-					glDisable( GL_TEXTURE_2D );
-					glEnd();
+					drawPiece( centrosx[i][j], centrosy[i][j], _peonn );
 					break;
 				case 'r':
-					glEnable( GL_TEXTURE_2D );
-					glBindTexture( GL_TEXTURE_2D, _torren );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-					glBegin( GL_QUADS );
-					glNormal3f( 0.0, 0.0f, 1.0f );
-
-					glTexCoord2f( 0.0f, 0.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-
-					glTexCoord2f( 0.0f, 1.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 1.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 0.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-					glDisable( GL_TEXTURE_2D );
-					glEnd();
+					drawPiece( centrosx[i][j], centrosy[i][j], _torren );
 					break;
 				case 'b':
-					glEnable( GL_TEXTURE_2D );
-					glBindTexture( GL_TEXTURE_2D, _alfiln );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-					glBegin( GL_QUADS );
-					glNormal3f( 0.0, 0.0f, 1.0f );
-
-					glTexCoord2f( 0.0f, 0.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-
-					glTexCoord2f( 0.0f, 1.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 1.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 0.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-					glDisable( GL_TEXTURE_2D );
-					glEnd();
+					drawPiece( centrosx[i][j], centrosy[i][j], _alfiln );
 					break;
 				case 'n':
-					glEnable( GL_TEXTURE_2D );
-					glBindTexture( GL_TEXTURE_2D, _caballon );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-					glBegin( GL_QUADS );
-					glNormal3f( 0.0, 0.0f, 1.0f );
-
-					glTexCoord2f( 0.0f, 0.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-
-					glTexCoord2f( 0.0f, 1.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 1.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 0.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-					glDisable( GL_TEXTURE_2D );
-					glEnd();
+					drawPiece( centrosx[i][j], centrosy[i][j], _caballon );
 					break;
 				case 'q':
-					glEnable( GL_TEXTURE_2D );
-					glBindTexture( GL_TEXTURE_2D, _reinan );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-					glBegin( GL_QUADS );
-					glNormal3f( 0.0, 0.0f, 1.0f );
-
-					glTexCoord2f( 0.0f, 0.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-
-					glTexCoord2f( 0.0f, 1.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 1.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 0.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-					glDisable( GL_TEXTURE_2D );
-					glEnd();
+					drawPiece( centrosx[i][j], centrosy[i][j], _reinan );
 					break;
 				case 'k':
-					glEnable( GL_TEXTURE_2D );
-					glBindTexture( GL_TEXTURE_2D, _reyn );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-					glBegin( GL_QUADS );
-					glNormal3f( 0.0, 0.0f, 1.0f );
-
-					glTexCoord2f( 0.0f, 0.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-
-					glTexCoord2f( 0.0f, 1.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 1.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 0.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-					glDisable( GL_TEXTURE_2D );
-					glEnd();
+					drawPiece( centrosx[i][j], centrosy[i][j], _reyn );
 					break;
 				case 'P':
-					glEnable( GL_TEXTURE_2D );
-					glBindTexture( GL_TEXTURE_2D, _peonb );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-					glBegin( GL_QUADS );
-					glNormal3f( 0.0, 0.0f, 1.0f );
-
-					glTexCoord2f( 0.0f, 0.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-
-					glTexCoord2f( 0.0f, 1.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 1.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 0.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-					glDisable( GL_TEXTURE_2D );
-					glEnd();
+					drawPiece( centrosx[i][j], centrosy[i][j], _peonb );
 					break;
 				case 'R':
-					glEnable( GL_TEXTURE_2D );
-					glBindTexture( GL_TEXTURE_2D, _torreb );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-					glBegin( GL_QUADS );
-					glNormal3f( 0.0, 0.0f, 1.0f );
-
-					glTexCoord2f( 0.0f, 0.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-
-					glTexCoord2f( 0.0f, 1.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 1.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 0.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-					glDisable( GL_TEXTURE_2D );
-					glEnd();
+					drawPiece( centrosx[i][j], centrosy[i][j], _torreb );
 					break;
 				case 'B':
-					glEnable( GL_TEXTURE_2D );
-					glBindTexture( GL_TEXTURE_2D, _alfilb );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-					glBegin( GL_QUADS );
-					glNormal3f( 0.0, 0.0f, 1.0f );
-
-					glTexCoord2f( 0.0f, 0.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-
-					glTexCoord2f( 0.0f, 1.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 1.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 0.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-					glDisable( GL_TEXTURE_2D );
-					glEnd();
+					drawPiece( centrosx[i][j], centrosy[i][j], _alfilb );
 					break;
 				case 'N':
-					glEnable( GL_TEXTURE_2D );
-					glBindTexture( GL_TEXTURE_2D, _caballob );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-					glBegin( GL_QUADS );
-					glNormal3f( 0.0, 0.0f, 1.0f );
-
-					glTexCoord2f( 0.0f, 0.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-
-					glTexCoord2f( 0.0f, 1.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 1.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 0.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-					glDisable( GL_TEXTURE_2D );
-					glEnd();
+					drawPiece( centrosx[i][j], centrosy[i][j], _caballob );
 					break;
 				case 'Q':
-					glEnable( GL_TEXTURE_2D );
-					glBindTexture( GL_TEXTURE_2D, _reinab );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-					glBegin( GL_QUADS );
-					glNormal3f( 0.0, 0.0f, 1.0f );
-
-					glTexCoord2f( 0.0f, 0.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-
-					glTexCoord2f( 0.0f, 1.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 1.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 0.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-					glDisable( GL_TEXTURE_2D );
-					glEnd();
+					drawPiece( centrosx[i][j], centrosy[i][j], _reinab );
 					break;
 				case 'K':
-					glEnable( GL_TEXTURE_2D );
-					glBindTexture( GL_TEXTURE_2D, _reyb );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR );
-					glTexParameteri( GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR );
-					glBegin( GL_QUADS );
-					glNormal3f( 0.0, 0.0f, 1.0f );
-
-					glTexCoord2f( 0.0f, 0.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-
-					glTexCoord2f( 0.0f, 1.0f );
-					glVertex3f( centrosx[i][j] - 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 1.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] + 0.35f, 0.1f );
-
-					glTexCoord2f( 1.0f, 0.0f );
-					glVertex3f( centrosx[i][j] + 0.35f, centrosy[i][j] - 0.35f, 0.1f );
-					glDisable( GL_TEXTURE_2D );
-					glEnd();
-					break;
-				default:
+					drawPiece( centrosx[i][j], centrosy[i][j], _reyb );
 					break;
 			}
-
 		}
 	}
 
 	glutSwapBuffers();
-	cout << "\nDibujando escena...";
+	cout << "\nScene drown...";
 }
 
-void drawChessBoard( string initPosition )
+void drawChessBoard()
 {
-	orden = initPosition;
-	glutDisplayFunc( iniciarEscena );
+	glutDisplayFunc( renderScene );
 	glutKeyboardFunc( handleKeypress );
 	glutReshapeFunc( handleResize );
 	glutMainLoop();
@@ -686,17 +284,15 @@ void drawChessBoard( string initPosition )
 
 int main( int argc, char** argv )
 {
-	cout << "**********" << endl;
-	cout << "PROBLEMA 4" << endl;
-	cout << "**********" << endl;
 	glutInit( &argc, argv );
 	glutInitDisplayMode( GLUT_DOUBLE | GLUT_RGB | GLUT_DEPTH );
 	glutInitWindowSize( 400, 400 );
-	glutCreateWindow( "Ajedrez con OpenGl" );
+	glutCreateWindow( "Chess with OpenGL" );
 	initRendering();
 
 	string initPosition( "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR" );
-	drawChessBoard( initPosition );
+	parsedInitPositions = parseChessInput( initPosition );
+	drawChessBoard();
 	return 0;
 }
 
