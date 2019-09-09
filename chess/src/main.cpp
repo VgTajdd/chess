@@ -21,7 +21,7 @@ void handleKeypress( unsigned char key, int x, int y )
 {
 	switch ( key )
 	{
-		case 27: //Tecla Escape
+		case 27: // Escape.
 			exit( 0 );
 	}
 }
@@ -36,18 +36,18 @@ GLuint loadTexture( Image* image )
 }
 
 GLuint _textureId;
-GLuint _peonb;
-GLuint _peonn;
-GLuint _torreb;
-GLuint _torren;
-GLuint _alfilb;
-GLuint _alfiln;
-GLuint _caballob;
-GLuint _caballon;
-GLuint _reinab;
-GLuint _reinan;
-GLuint _reyb;
-GLuint _reyn;
+GLuint _pawn_w;
+GLuint _pawn_b;
+GLuint _rook_w;
+GLuint _rook_b;
+GLuint _bishop_w;
+GLuint _bishop_b;
+GLuint _knight_w;
+GLuint _knight_b;
+GLuint _queen_w;
+GLuint _queen_b;
+GLuint _king_w;
+GLuint _king_b;
 
 void initRendering()
 {
@@ -60,51 +60,51 @@ void initRendering()
 
 	// Loading Images.
 	Image* image = loadBMP( "assets/peonb.bmp" );
-	_peonb = loadTexture( image );
+	_pawn_w = loadTexture( image );
 	delete image;
 
 	Image* image2 = loadBMP( "assets/peonn.bmp" );
-	_peonn = loadTexture( image2 );
+	_pawn_b = loadTexture( image2 );
 	delete image2;
 
 	Image* image3 = loadBMP( "assets/torreb.bmp" );
-	_torreb = loadTexture( image3 );
+	_rook_w = loadTexture( image3 );
 	delete image3;
 
 	Image* image4 = loadBMP( "assets/torren.bmp" );
-	_torren = loadTexture( image4 );
+	_rook_b = loadTexture( image4 );
 	delete image4;
 
 	Image* image5 = loadBMP( "assets/alfilb.bmp" );
-	_alfilb = loadTexture( image5 );
+	_bishop_w = loadTexture( image5 );
 	delete image5;
 
 	Image* image6 = loadBMP( "assets/alfiln.bmp" );
-	_alfiln = loadTexture( image6 );
+	_bishop_b = loadTexture( image6 );
 	delete image6;
 
 	Image* image7 = loadBMP( "assets/caballob.bmp" );
-	_caballob = loadTexture( image7 );
+	_knight_w = loadTexture( image7 );
 	delete image7;
 
-	Image* imageCHESS_SIZE = loadBMP( "assets/caballon.bmp" );
-	_caballon = loadTexture( imageCHESS_SIZE );
-	delete imageCHESS_SIZE;
+	Image* image8 = loadBMP( "assets/caballon.bmp" );
+	_knight_b = loadTexture( image8 );
+	delete image8;
 
 	Image* image9 = loadBMP( "assets/reinab.bmp" );
-	_reinab = loadTexture( image9 );
+	_queen_w = loadTexture( image9 );
 	delete image9;
 
 	Image* image10 = loadBMP( "assets/reinan.bmp" );
-	_reinan = loadTexture( image10 );
+	_queen_b = loadTexture( image10 );
 	delete image10;
 
 	Image* image11 = loadBMP( "assets/reyb.bmp" );
-	_reyb = loadTexture( image11 );
+	_king_w = loadTexture( image11 );
 	delete image11;
 
 	Image* image12 = loadBMP( "assets/reyn.bmp" );
-	_reyn = loadTexture( image12 );
+	_king_b = loadTexture( image12 );
 	delete image12;
 }
 
@@ -193,22 +193,24 @@ void renderScene()
 		}
 	}
 
-	/*	p = peón
-		r = torre
-		b = alfil
-		n = caballo
-		q = reina
-		k = rey */
+	/*
+	p = pawn
+	r = rook
+	b = bishop
+	n = knight
+	q = queen
+	k = king
+	*/
 
 	// Drawing cells/pieces.
-	float centrosx[CHESS_SIZE][CHESS_SIZE], centrosy[CHESS_SIZE][CHESS_SIZE];
+	float cx[CHESS_SIZE][CHESS_SIZE], cy[CHESS_SIZE][CHESS_SIZE];
 	for ( int i = 0; i < CHESS_SIZE; i++ )
 	{
 		for ( int j = 0; j < CHESS_SIZE; j++ )
 		{
 			glDisable( GL_TEXTURE_2D );
-			centrosy[i][j] = 3.5f - i;
-			centrosx[i][j] = float( j ) - 3.5f;
+			cy[i][j] = 3.5f - i;
+			cx[i][j] = float( j ) - 3.5f;
 
 			if ( ( ( i % 2 ) + ( j % 2 ) ) % 2 == 0 ) // Cell bg color.
 			{
@@ -221,50 +223,50 @@ void renderScene()
 
 			glBegin( GL_QUADS );
 			glNormal3f( 0.0, 0.0f, 1.0f );
-			glVertex3f( centrosx[i][j] - 0.5f, centrosy[i][j] - 0.5f, 0.0f );
-			glVertex3f( centrosx[i][j] - 0.5f, centrosy[i][j] + 0.5f, 0.0f );
-			glVertex3f( centrosx[i][j] + 0.5f, centrosy[i][j] + 0.5f, 0.0f );
-			glVertex3f( centrosx[i][j] + 0.5f, centrosy[i][j] - 0.5f, 0.0f );
+			glVertex3f( cx[i][j] - 0.5f, cy[i][j] - 0.5f, 0.0f );
+			glVertex3f( cx[i][j] - 0.5f, cy[i][j] + 0.5f, 0.0f );
+			glVertex3f( cx[i][j] + 0.5f, cy[i][j] + 0.5f, 0.0f );
+			glVertex3f( cx[i][j] + 0.5f, cy[i][j] - 0.5f, 0.0f );
 			glEnd();
 
 			glColor3f( 1.0f, 1.0f, 1.0f );
 			switch ( matrix[i][j] )
 			{
 				case 'p':
-					drawPiece( centrosx[i][j], centrosy[i][j], _peonn );
+					drawPiece( cx[i][j], cy[i][j], _pawn_b );
 					break;
 				case 'r':
-					drawPiece( centrosx[i][j], centrosy[i][j], _torren );
+					drawPiece( cx[i][j], cy[i][j], _rook_b );
 					break;
 				case 'b':
-					drawPiece( centrosx[i][j], centrosy[i][j], _alfiln );
+					drawPiece( cx[i][j], cy[i][j], _bishop_b );
 					break;
 				case 'n':
-					drawPiece( centrosx[i][j], centrosy[i][j], _caballon );
+					drawPiece( cx[i][j], cy[i][j], _knight_b );
 					break;
 				case 'q':
-					drawPiece( centrosx[i][j], centrosy[i][j], _reinan );
+					drawPiece( cx[i][j], cy[i][j], _queen_b );
 					break;
 				case 'k':
-					drawPiece( centrosx[i][j], centrosy[i][j], _reyn );
+					drawPiece( cx[i][j], cy[i][j], _king_b );
 					break;
 				case 'P':
-					drawPiece( centrosx[i][j], centrosy[i][j], _peonb );
+					drawPiece( cx[i][j], cy[i][j], _pawn_w );
 					break;
 				case 'R':
-					drawPiece( centrosx[i][j], centrosy[i][j], _torreb );
+					drawPiece( cx[i][j], cy[i][j], _rook_w );
 					break;
 				case 'B':
-					drawPiece( centrosx[i][j], centrosy[i][j], _alfilb );
+					drawPiece( cx[i][j], cy[i][j], _bishop_w );
 					break;
 				case 'N':
-					drawPiece( centrosx[i][j], centrosy[i][j], _caballob );
+					drawPiece( cx[i][j], cy[i][j], _knight_w );
 					break;
 				case 'Q':
-					drawPiece( centrosx[i][j], centrosy[i][j], _reinab );
+					drawPiece( cx[i][j], cy[i][j], _queen_w );
 					break;
 				case 'K':
-					drawPiece( centrosx[i][j], centrosy[i][j], _reyb );
+					drawPiece( cx[i][j], cy[i][j], _king_w );
 					break;
 			}
 		}
