@@ -13,5 +13,62 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Source Files\glUtils">
+      <UniqueIdentifier>{4e2d4c34-6f70-41ea-87e3-74be7d2da66a}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\glUtils\imageloader.cpp">
+      <Filter>Source Files\glUtils</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <Image Include="assets\alfilb.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\alfiln.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\caballob.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\caballon.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\peonb.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\peonn.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\reinab.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\reinan.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\reyb.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\reyn.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\torreb.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\torren.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+    <Image Include="assets\vtr2.bmp">
+      <Filter>Resource Files</Filter>
+    </Image>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\glUtils\imageloader.h">
+      <Filter>Source Files\glUtils</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
