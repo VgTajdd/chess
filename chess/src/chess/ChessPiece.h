@@ -22,6 +22,8 @@ public:
 	const int column() const;
 	const bool isBlack() const;
 private:
+	void setPosition( const int row, const int column );
+private:
 	int m_row;
 	int m_column;
 	TYPE m_type;

@@ -30,3 +30,9 @@ const bool ChessPiece::isBlack() const
 {
 	return m_isBlack;
 }
+
+void ChessPiece::setPosition( const int row, const int column )
+{
+	m_row = row;
+	m_column = row;
+}
