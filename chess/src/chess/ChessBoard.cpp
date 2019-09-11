@@ -4,7 +4,7 @@ using namespace std;
 
 ChessBoard::ChessBoard() : BaseItem(),
 idx_default_pawns( { 8, 9, 10, 11, 12, 13, 14, 15 } ),
-idx_default_rooks( { 0, 7} ),
+idx_default_rooks( { 0, 7 } ),
 idx_default_knight( { 1, 6 } ),
 idx_default_bishops( { 2, 5 } ),
 idx_default_queen( { 3 } ),
@@ -58,7 +58,7 @@ const bool ChessBoard::existsPieceAt( const int row, const int column )
 	if ( row >= 0 && row < SIZE && column >= 0 && column < SIZE )
 	{
 		const int idx = m_positions[row * SIZE + column];
-		if ( idx >= 0 == idx < m_pieces.size() )
+		if ( idx >= 0 && idx < m_pieces.size() )
 		{
 			return true;
 		}
@@ -135,6 +135,8 @@ void ChessBoard::parseChessInput( const string input, bool& ok )
 			ok = true;
 
 			// Creating new chess.
+			m_pieces.clear();
+			m_positions.clear();
 			m_positions.resize( CELLS_COUNT, -1 );
 			for ( auto group : freq_b )
 			{
