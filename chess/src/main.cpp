@@ -2,6 +2,7 @@
 #include <string>
 #include <ctype.h>
 #include "glUtils/imageloader.h"
+#include "chess/ChessBoard.h"
 
 #ifdef __APPLE__
 #include <OpenGL/OpenGL.h>
@@ -16,6 +17,8 @@ static const int CHESS_SIZE = 8;
 static const int CHESS_PIECES_COUNT = 64;
 
 string parsedInitPositions;
+
+ChessBoard chessBoard;
 
 void handleKeypress( unsigned char key, int x, int y )
 {
@@ -276,12 +279,15 @@ void renderScene()
 	cout << "\nScene drown...";
 }
 
-void drawChessBoard()
+void drawChessBoard( const string initPosition )
 {
-	glutDisplayFunc( renderScene );
-	glutKeyboardFunc( handleKeypress );
-	glutReshapeFunc( handleResize );
-	glutMainLoop();
+	parsedInitPositions = parseChessInput( initPosition );
+	bool ok = false;
+	chessBoard.parseChessInput( initPosition, ok );
+	if ( !ok )
+	{
+		cout << "\nInvalid String";
+	}
 }
 
 int main( int argc, char** argv )
@@ -293,8 +299,13 @@ int main( int argc, char** argv )
 	initRendering();
 
 	string initPosition( "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR" );
-	parsedInitPositions = parseChessInput( initPosition );
-	drawChessBoard();
+	drawChessBoard( initPosition );
+
+	glutDisplayFunc( renderScene );
+	glutKeyboardFunc( handleKeypress );
+	glutReshapeFunc( handleResize );
+	glutMainLoop();
+
 	return 0;
 }
 

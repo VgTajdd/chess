@@ -16,6 +16,9 @@
     <Filter Include="Source Files\glUtils">
       <UniqueIdentifier>{4e2d4c34-6f70-41ea-87e3-74be7d2da66a}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Source Files\chess">
+      <UniqueIdentifier>{a264e446-2ffe-4c96-8faa-9c3e3d2cb79d}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
@@ -23,6 +26,12 @@
     </ClCompile>
     <ClCompile Include="src\glUtils\imageloader.cpp">
       <Filter>Source Files\glUtils</Filter>
+    </ClCompile>
+    <ClCompile Include="src\chess\ChessPiece.cpp">
+      <Filter>Source Files\chess</Filter>
+    </ClCompile>
+    <ClCompile Include="src\chess\ChessBoard.cpp">
+      <Filter>Source Files\chess</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -69,6 +78,15 @@
   <ItemGroup>
     <ClInclude Include="src\glUtils\imageloader.h">
       <Filter>Source Files\glUtils</Filter>
+    </ClInclude>
+    <ClInclude Include="src\chess\BaseItem.h">
+      <Filter>Source Files\chess</Filter>
+    </ClInclude>
+    <ClInclude Include="src\chess\ChessPiece.h">
+      <Filter>Source Files\chess</Filter>
+    </ClInclude>
+    <ClInclude Include="src\chess\ChessBoard.h">
+      <Filter>Source Files\chess</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
