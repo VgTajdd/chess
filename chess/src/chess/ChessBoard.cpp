@@ -43,16 +43,6 @@ void ChessBoard::createPiece( const ChessPiece::TYPE type, const int index, cons
 	m_positions[index] = int( m_pieces.size() ) - 1;
 }
 
-const bool ChessBoard::isEmpty() const
-{
-	return m_pieces.empty();
-}
-
-const ChessPiece& ChessBoard::pieceAt( const int row, const int column )
-{
-	return m_pieces[m_positions[row * SIZE + column]];
-}
-
 const bool ChessBoard::existsPieceAt( const int row, const int column )
 {
 	if ( row >= 0 && row < SIZE && column >= 0 && column < SIZE )
@@ -64,11 +54,6 @@ const bool ChessBoard::existsPieceAt( const int row, const int column )
 		}
 	}
 	return false;
-}
-
-const bool ChessBoard::isDarkCell( const int row, const int column )
-{
-	return ( ( ( row % 2 ) + ( column % 2 ) ) % 2 == 0 );
 }
 
 void ChessBoard::parseChessInput( const string input, bool& ok )

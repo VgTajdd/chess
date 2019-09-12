@@ -152,12 +152,17 @@ void renderScene()
 			glVertex3f( x + 0.5f, y + 0.5f, 0.0f );
 			glVertex3f( x + 0.5f, y - 0.5f, 0.0f );
 			glEnd();
+		}
+	}
 
-			if ( chessBoard.existsPieceAt( i, j ) )
-			{
-				const auto& piece = chessBoard.pieceAt( i, j );
-				drawPiece( x, y, piece.isBlack() ? textureIdByTypeB[piece.type()] : textureIdByTypeW[piece.type()] );
-			}
+	// Drawing pieces.
+	for ( const auto& piece : chessBoard.getPieces() )
+	{
+		if ( piece.getState() == ChessPiece::STATE::STATIC )
+		{
+			x = 3.5f - piece.column();
+			y = float( piece.row() ) - 3.5f;
+			drawPiece( x, y, piece.isBlack() ? textureIdByTypeB[piece.type()] : textureIdByTypeW[piece.type()] );
 		}
 	}
 
