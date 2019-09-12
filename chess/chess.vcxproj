@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClCompile Include="src\chess\ChessPiece.cpp" />
     <ClCompile Include="src\chess\ChessBoard.cpp" />
+    <ClCompile Include="src\game\ChessGame.cpp" />
     <ClCompile Include="src\glUtils\imageloader.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
@@ -43,6 +44,7 @@
     <ClInclude Include="src\chess\BaseItem.h" />
     <ClInclude Include="src\chess\ChessPiece.h" />
     <ClInclude Include="src\chess\ChessBoard.h" />
+    <ClInclude Include="src\game\ChessGame.h" />
     <ClInclude Include="src\glUtils\imageloader.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
