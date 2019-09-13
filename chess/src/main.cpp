@@ -13,7 +13,100 @@
 
 using namespace std;
 
-ChessBoard chessBoard;
+class ChessBoardExtended : public ChessBoard
+{
+public:
+	ChessBoardExtended ChessBoard() {};
+public:
+	void parseChessInput( const std::string input, bool& ok ); // special method.
+};
+
+void ChessBoardExtended::parseChessInput( const string input, bool& ok )
+{
+	string ans;
+	ok = false;
+	for ( int i = 0; i < input.length(); i++ )
+	{
+		char c = input[i];
+		if ( isdigit( input[i] ) )
+		{
+			int t = atoi( &c );
+			ans.append( string( t, '*' ) );
+		}
+		else if ( isalpha( input[i] ) )
+		{
+			ans.append( string( 1, c ) );
+		}
+	}
+
+	// Validations.
+	if ( ans.size() == CELLS_COUNT )
+	{
+		map< ChessPiece::TYPE, vector< int > > freq_b, freq_w;
+		for ( int i = 0; i < ans.length(); i++ )
+		{
+			char c = tolower( ans[i] );
+			ChessPiece::TYPE type = ChessPiece::TYPE::NONE;
+			switch ( c )
+			{
+				case 'p': type = ChessPiece::TYPE::PAWN; break;
+				case 'r': type = ChessPiece::TYPE::ROOK; break;
+				case 'b': type = ChessPiece::TYPE::BISHOP; break;
+				case 'n': type = ChessPiece::TYPE::KNIGHT; break;
+				case 'q': type = ChessPiece::TYPE::QUEEN; break;
+				case 'k': type = ChessPiece::TYPE::KING; break;
+				default:  type = ChessPiece::TYPE::NONE; break;
+			}
+			if ( type != ChessPiece::TYPE::NONE )
+			{
+				if ( islower( ans[i] ) ) // Lower -> white.
+				{
+					freq_w[type].push_back( i );
+				}
+				else
+				{
+					freq_b[type].push_back( i );
+				}
+			}
+		}
+		bool invalidFreqs = false;
+		for ( auto group : all_idxs )
+		{
+			auto type = group.first;
+			if ( ( freq_b[type].size() != group.second.size() )
+				 || ( freq_w[type].size() != group.second.size() ) )
+			{
+				invalidFreqs = true;
+				break;
+			}
+		}
+		if ( !invalidFreqs )
+		{
+			ok = true;
+
+			// Creating new chess.
+			clear();
+			for ( auto group : freq_b )
+			{
+				ChessPiece::TYPE type = group.first;
+				for ( auto idx : group.second )
+				{
+					createPiece( type, idx, true );
+				}
+			}
+			for ( auto group : freq_w )
+			{
+				ChessPiece::TYPE type = group.first;
+				for ( auto idx : group.second )
+				{
+					createPiece( type, idx, false );
+				}
+			}
+		}
+	}
+}
+
+ChessBoardExtended chessBoard;
 
 void handleKeypress( unsigned char key, int x, int y )
 {

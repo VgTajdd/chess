@@ -3,7 +3,6 @@
 #include "ChessPiece.h"
 #include <vector>
 #include <map>
-#include <string>
 
 class ChessBoard : public BaseItem
 {
@@ -14,7 +13,7 @@ public:
 public:
 	ChessBoard();
 	~ChessBoard();
-private:
+protected:
 	std::vector< int > idx_default_pawns;
 	std::vector< int > idx_default_rooks;
 	std::vector< int > idx_default_bishops;
@@ -28,9 +27,7 @@ public:
 	const bool existsPieceAt( const int row, const int column );
 	const bool isDarkCell( const int row, const int column );
 	const std::vector< ChessPiece >& getPieces() const;
-public:
-	void parseChessInput( const std::string input, bool& ok ); // special method.
-private:
+protected:
 	void clear();
 	void initInDefaultPositions();
 	void createPiece( const ChessPiece::TYPE type, const int index, const bool isBlack );
