@@ -48,7 +48,7 @@ const bool ChessBoard::existsPieceAt( const int row, const int column )
 	if ( row >= 0 && row < SIZE && column >= 0 && column < SIZE )
 	{
 		const int idx = m_positions[row * SIZE + column];
-		if ( idx >= 0 && idx < m_pieces.size() )
+		if ( idx >= 0 && idx < int( m_pieces.size() ) )
 		{
 			return true;
 		}
