@@ -20,7 +20,6 @@ Application::Application():
 	m_game( nullptr )
 {
 	m_game = new ChessGame();
-	m_game->start();
 }
 
 Application::~Application()

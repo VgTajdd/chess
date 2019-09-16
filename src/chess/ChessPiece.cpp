@@ -1,38 +1,24 @@
 #include "ChessPiece.h"
+#include "ChessBoard.h"
 
-ChessPiece::ChessPiece( const ChessPiece::TYPE type, const bool black, const int row, const int col ) :
+ChessPiece::ChessPiece( const int index, const ChessPiece::TYPE type, const bool black, const int absRow, const int absCol ) :
 	BaseItem(),
+	m_index( index ),
 	m_type( type ),
 	m_isBlack( black ),
-	m_row( row ),
-	m_column( col )
+	m_row( absRow ),
+	m_column( absCol )
 {}
 
 ChessPiece::~ChessPiece()
 {}
 
-const ChessPiece::TYPE ChessPiece::type() const
+const int ChessPiece::relRow() const
 {
-	return m_type;
+	return m_isBlack ? ChessBoard::SIZE - m_row : m_row;
 }
 
-const int ChessPiece::row() const
+const int ChessPiece::relCol() const
 {
-	return m_row;
-}
-
-const int ChessPiece::column() const
-{
-	return m_column;
-}
-
-const bool ChessPiece::isBlack() const
-{
-	return m_isBlack;
-}
-
-void ChessPiece::setPosition( const int row, const int column )
-{
-	m_row = row;
-	m_column = row;
+	return m_isBlack ? ChessBoard::SIZE - m_column : m_column;
 }

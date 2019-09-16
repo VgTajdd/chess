@@ -1,6 +1,6 @@
 #include "ChessBoard.h"
 
-ChessBoard::ChessBoard() : BaseItem(),
+ChessBoard::ChessBoard() :
 idx_default_pawns( { 8, 9, 10, 11, 12, 13, 14, 15 } ),
 idx_default_rooks( { 0, 7 } ),
 idx_default_knight( { 1, 6 } ),
@@ -37,8 +37,9 @@ void ChessBoard::initInDefaultPositions()
 
 void ChessBoard::createPiece( const ChessPiece::TYPE type, const int index, const bool isBlack )
 {
-	m_pieces.push_back( ChessPiece( type, isBlack, index / SIZE, index % SIZE ) );
-	m_positions[index] = int( m_pieces.size() ) - 1;
+	int indexPiece = int( m_pieces.size() );
+	m_pieces.push_back( ChessPiece( indexPiece, type, isBlack, index / SIZE, index % SIZE ) );
+	m_positions[index] = indexPiece;
 }
 
 const bool ChessBoard::existsPieceAt( const int row, const int column )

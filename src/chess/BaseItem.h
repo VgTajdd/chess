@@ -3,27 +3,29 @@
 class BaseItem
 {
 public:
-	enum STATE
-	{
-		STATIC = 0,
-		MOVEMENT = 1,
-	};
+	const int static STAND = 0;
 public:
-	BaseItem() : m_state( BaseItem::STATE::STATIC ) {};
+	BaseItem() : m_state( BaseItem::STAND ) {};
 	~BaseItem() {};
-	const STATE getState() const;
+	const int getState() const;
+	virtual void gotoState( const int state );
 protected:
-	void setState( const STATE state );
+	void setState( const int state );
 private:
-	STATE m_state;
+	int m_state;
 };
 
-inline void BaseItem::setState( const BaseItem::STATE state )
+inline void BaseItem::setState( const int state )
 {
 	m_state = state;
 }
 
-inline const BaseItem::STATE BaseItem::getState() const
+inline const int BaseItem::getState() const
 {
 	return m_state;
+}
+
+inline void BaseItem::gotoState( const int state )
+{
+	m_state = state;
 }

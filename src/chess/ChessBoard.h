@@ -1,10 +1,9 @@
 #pragma once
-#include "BaseItem.h"
 #include "ChessPiece.h"
 #include <vector>
 #include <map>
 
-class ChessBoard : public BaseItem
+class ChessBoard
 {
 public:
 	const static int SIZE = 8;
