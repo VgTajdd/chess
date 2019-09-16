@@ -1,7 +1,5 @@
 #include "ChessBoard.h"
 
-using namespace std;
-
 ChessBoard::ChessBoard() : BaseItem(),
 idx_default_pawns( { 8, 9, 10, 11, 12, 13, 14, 15 } ),
 idx_default_rooks( { 0, 7 } ),
@@ -31,8 +29,8 @@ void ChessBoard::initInDefaultPositions()
 		ChessPiece::TYPE type = group.first;
 		for ( auto idx : group.second )
 		{
-			createPiece( type, idx, true );
-			createPiece( type, CELLS_COUNT - idx - 1, false );
+			createPiece( type, idx, false );
+			createPiece( type, CELLS_COUNT - idx - 1, true );
 		}
 	}
 }
