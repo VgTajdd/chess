@@ -23,6 +23,7 @@ protected:
 public:
 	const bool isEmpty() const;
 	const ChessPiece& pieceAt( const int row, const int column );
+	const ChessPiece& piece( const int indexPiece );
 	const bool existsPieceAt( const int row, const int column );
 	const bool isDarkCell( const int row, const int column );
 	const std::vector< ChessPiece >& getPieces() const;
@@ -48,6 +49,11 @@ inline const bool ChessBoard::isEmpty() const
 inline const ChessPiece& ChessBoard::pieceAt( const int row, const int column )
 {
 	return m_pieces[m_positions[row * SIZE + column]];
+}
+
+inline const ChessPiece& ChessBoard::piece( const int indexPiece )
+{
+	return m_pieces.at( indexPiece );
 }
 
 inline const std::vector< ChessPiece >& ChessBoard::getPieces() const

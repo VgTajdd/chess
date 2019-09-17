@@ -33,17 +33,20 @@ public:
 		BACK
 	};
 public:
-	ChessPlayer( const bool isBlack ) : BaseItem(), m_isBlack( isBlack ), m_active( false ) {};
-	~ChessPlayer() {};
+	ChessPlayer( ChessBoard* board, const bool isBlack );
+	~ChessPlayer();
 	void update( const int dt );
 	void setActive( const bool value );
 	void gotoState( const int state ) override;
 	void getPossibleMovements();
+	std::vector< ChessMovement* > getPossibleMovementsByPiece( const int indexPiece );
+	std::vector< ChessMovement* > getPawnPossibleMovements( const int indexPiece );
 	const int absIncrementH( const REL_DIRECTION_H dir ) const;
 	const int absIncrementV( const REL_DIRECTION_V dir ) const;
 private:
 	bool m_isBlack;
 	bool m_active;
+	ChessBoard* m_board;
 	std::vector< ChessMovement* > m_possibleMovements;
 	std::vector< ChessMovement* > m_doneMovements;
 };

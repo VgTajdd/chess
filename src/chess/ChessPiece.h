@@ -22,7 +22,7 @@ public:
 	const int row() const;
 	const int column() const;
 	const int relRow() const;
-	const int relCol() const;
+	const int relColumn() const;
 	const bool isBlack() const;
 private:
 	void setPosition( const int row, const int column );

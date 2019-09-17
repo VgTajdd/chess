@@ -18,7 +18,7 @@ const int ChessPiece::relRow() const
 	return m_isBlack ? ChessBoard::SIZE - m_row : m_row;
 }
 
-const int ChessPiece::relCol() const
+const int ChessPiece::relColumn() const
 {
 	return m_isBlack ? ChessBoard::SIZE - m_column : m_column;
 }

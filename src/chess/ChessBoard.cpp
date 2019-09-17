@@ -1,12 +1,13 @@
 #include "ChessBoard.h"
+#include <assert.h>
 
 ChessBoard::ChessBoard() :
-idx_default_pawns( { 8, 9, 10, 11, 12, 13, 14, 15 } ),
-idx_default_rooks( { 0, 7 } ),
-idx_default_knight( { 1, 6 } ),
-idx_default_bishops( { 2, 5 } ),
-idx_default_queen( { 3 } ),
-idx_default_king( { 4 } )
+	idx_default_pawns( { 8, 9, 10, 11, 12, 13, 14, 15 } ),
+	idx_default_rooks( { 0, 7 } ),
+	idx_default_knight( { 1, 6 } ),
+	idx_default_bishops( { 2, 5 } ),
+	idx_default_queen( { 3 } ),
+	idx_default_king( { 4 } )
 {
 	all_idxs.emplace( ChessPiece::TYPE::PAWN, idx_default_pawns );
 	all_idxs.emplace( ChessPiece::TYPE::ROOK, idx_default_rooks );
@@ -44,6 +45,7 @@ void ChessBoard::createPiece( const ChessPiece::TYPE type, const int index, cons
 
 const bool ChessBoard::existsPieceAt( const int row, const int column )
 {
+	assert( row >= 0 && row < SIZE && column >= 0 && column < SIZE );
 	if ( row >= 0 && row < SIZE && column >= 0 && column < SIZE )
 	{
 		const int idx = m_positions[row * SIZE + column];

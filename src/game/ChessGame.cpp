@@ -8,8 +8,8 @@ ChessGame::ChessGame():
 	m_inInBlackTurn( false )
 {
 	m_board = new ChessBoard();
-	m_playerW = new ChessPlayer( false );
-	m_playerB = new ChessPlayer( true );
+	m_playerW = new ChessPlayer( m_board, false );
+	m_playerB = new ChessPlayer( m_board, true );
 
 	m_activePlayer = m_playerW;
 	m_activePlayer->setActive( true );
@@ -20,6 +20,7 @@ ChessGame::~ChessGame()
 	delete m_board;
 	delete m_playerW;
 	delete m_playerB;
+	m_activePlayer = nullptr;
 }
 
 void ChessGame::togglePlayerInTurn()
@@ -48,6 +49,18 @@ void ChessGame::update( const int dt )
 }
 
 //============================== ChessPlayer ==================================
+
+ChessPlayer::ChessPlayer( ChessBoard* board, const bool isBlack ) :
+	BaseItem(),
+	m_isBlack( isBlack ),
+	m_active( false ),
+	m_board( board )
+{}
+
+ChessPlayer::~ChessPlayer()
+{
+	m_board = nullptr;
+}
 
 const int ChessPlayer::absIncrementH( const REL_DIRECTION_H dir ) const
 {
@@ -96,6 +109,50 @@ void ChessPlayer::gotoState( const int state )
 void ChessPlayer::getPossibleMovements()
 {
 	m_possibleMovements.clear();
+	/*std::vector< int > idxs;*/
+	const auto& pieces = m_board->getPieces();
+	for ( const auto& piece : pieces )
+	{
+		if ( ( piece.isBlack() && m_isBlack ) || ( !piece.isBlack() && !m_isBlack ) )
+		{
+			/*idxs.push_back( piece.index() );*/
+			std::vector< ChessMovement* > v = getPossibleMovementsByPiece( piece.index() );
+			m_possibleMovements.insert( m_possibleMovements.end(), v.begin(), v.end() );
+		}
+	}
+}
 
-	// TODO.
+std::vector< ChessMovement* > ChessPlayer::getPossibleMovementsByPiece( const int indexPiece )
+{
+	std::vector< ChessMovement* > ans;
+	const auto& piece = m_board->piece( indexPiece );
+	switch ( piece.type() )
+	{
+		case ChessPiece::TYPE::PAWN:
+			ans = getPawnPossibleMovements( indexPiece );
+			break;
+	}
+	return std::move( ans );
+}
+
+std::vector< ChessMovement* > ChessPlayer::getPawnPossibleMovements( const int indexPiece )
+{
+	/*
+	1- Define the final position. (I can make vectors for paths for each type)
+	2- Check if the path is empty (if knight pass this step). (I can make vectors for paths for each type)
+	3- Add movement to array.
+	*/
+
+	std::vector< ChessMovement* > ans;
+	const auto& piece = m_board->piece( indexPiece );
+
+	// 1 position forward.
+	int absR = piece.row() + absIncrementV( ChessPlayer::FORWARD );
+	int absC = piece.column();
+	m_board->existsPieceAt( absR, absC );
+
+	// 2 positions forward.
+	absR = piece.row() + absIncrementV( ChessPlayer::FORWARD );
+	m_board->existsPieceAt( absR, absC );
+	return std::move( ans );
 }
