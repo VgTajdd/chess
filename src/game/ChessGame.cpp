@@ -9,8 +9,8 @@ ChessGame::ChessGame():
 	m_inInBlackTurn( false )
 {
 	m_board = new ChessBoard();
-	m_playerW = new ChessPlayer( m_board, false );
-	m_playerB = new ChessPlayer( m_board, true );
+	m_playerW = new ChessPlayer( m_board, this, false );
+	m_playerB = new ChessPlayer( m_board, this, true );
 	m_rules = new ChessRules();
 
 	m_activePlayer = m_playerW;
@@ -51,18 +51,25 @@ void ChessGame::update( const int dt )
 	}
 }
 
+const std::vector< ChessMovement* >& ChessGame::getPossibleMovements( const ChessPiece::TYPE type )
+{
+	return m_rules->getMovements( type );
+}
+
 //============================== ChessPlayer ==================================
 
-ChessPlayer::ChessPlayer( ChessBoard* board, const bool isBlack ) :
+ChessPlayer::ChessPlayer( ChessBoard* board, ChessGame* game, const bool isBlack ) :
 	BaseItem(),
 	m_isBlack( isBlack ),
 	m_active( false ),
-	m_board( board )
+	m_board( board ),
+	m_game( game )
 {}
 
 ChessPlayer::~ChessPlayer()
 {
 	m_board = nullptr;
+	m_game = nullptr;
 }
 
 const int ChessPlayer::absIncrementH( const REL_DIRECTION_H dir ) const
@@ -112,13 +119,11 @@ void ChessPlayer::gotoState( const int state )
 void ChessPlayer::getPossibleMovements()
 {
 	m_possibleMovements.clear();
-	/*std::vector< int > idxs;*/
 	const auto& pieces = m_board->getPieces();
 	for ( const auto& piece : pieces )
 	{
 		if ( ( piece.isBlack() && m_isBlack ) || ( !piece.isBlack() && !m_isBlack ) )
 		{
-			/*idxs.push_back( piece.index() );*/
 			std::vector< ChessMovement* > v = getPossibleMovementsByPiece( piece.index() );
 			m_possibleMovements.insert( m_possibleMovements.end(), v.begin(), v.end() );
 		}
@@ -141,33 +146,113 @@ std::vector< ChessMovement* > ChessPlayer::getPossibleMovementsByPiece( const in
 std::vector< ChessMovement* > ChessPlayer::getPawnPossibleMovements( const int indexPiece )
 {
 	/*
-	1- Define the final position. (I can make vectors for paths for each type)
-	2- Check if the path is empty (if knight pass this step). (I can make vectors for paths for each type)
-	3- Add movement to array.
+	if ( use-only-final-position )
+	{ 1 y 2 -> add }
+	else
+	{
+		for (fp = next node in path)
+		{
+			1 y 2 -> add
+		}
+	}
+	1- fp exists inside of map?
+	2- fp has no friendly piece
 	*/
 
 	std::vector< ChessMovement* > ans;
-	const auto& piece = m_board->piece( indexPiece );
+	ans = m_game->getPossibleMovements( ChessPiece::PAWN );
 
-	// 1 position forward.
-	int absR = piece.row() + absIncrementV( ChessPlayer::FORWARD );
-	int absC = piece.column();
-	m_board->existsPieceAt( absR, absC );
+	// TODO.
 
-	// 2 positions forward.
-	absR = piece.row() + absIncrementV( ChessPlayer::FORWARD );
-	m_board->existsPieceAt( absR, absC );
-	return std::move( ans );
+	return ans;
 }
 
 //============================== ChessRules ===================================
 
 ChessRules::ChessRules()
 {
-	// create vectors
+	addMovement( ChessPiece::PAWN )->addPath( 0, 1, 2 );
+	addMovement( ChessPiece::PAWN )->addPath( -1, 1, 1 );
+	addMovement( ChessPiece::PAWN )->addPath( 1, 1, 1 );
+
+	addMovement( ChessPiece::ROOK )->addPath( -1, 0, 8 );
+	addMovement( ChessPiece::ROOK )->addPath( 1, 0, 8 );
+	addMovement( ChessPiece::ROOK )->addPath( 0, 1, 8 );
+	addMovement( ChessPiece::ROOK )->addPath( 0, -1, 8 );
+
+	addMovement( ChessPiece::BISHOP )->addPath( -1, 1, 8 );
+	addMovement( ChessPiece::BISHOP )->addPath( 1, -1, 8 );
+	addMovement( ChessPiece::BISHOP )->addPath( -1, -1, 8 );
+	addMovement( ChessPiece::BISHOP )->addPath( 1, 1, 8 );
+
+	addMovement( ChessPiece::KNIGHT )->addPath( -1, 0, 1 )->addPath( 0, 1, 2 );
+	addMovement( ChessPiece::KNIGHT )->addPath( -1, 0, 1 )->addPath( 0, -1, 2 );
+	addMovement( ChessPiece::KNIGHT )->addPath( 1, 0, 1 )->addPath( 0, 1, 2 );
+	addMovement( ChessPiece::KNIGHT )->addPath( 1, 0, 1 )->addPath( 0, -1, 2 );
+	addMovement( ChessPiece::KNIGHT )->addPath( -1, 0, 2 )->addPath( 0, 1, 1 );
+	addMovement( ChessPiece::KNIGHT )->addPath( -1, 0, 2 )->addPath( 0, -1, 1 );
+	addMovement( ChessPiece::KNIGHT )->addPath( 1, 0, 2 )->addPath( 0, 1, 1 );
+	addMovement( ChessPiece::KNIGHT )->addPath( 1, 0, 2 )->addPath( 0, -1, 1 );
+
+	addMovement( ChessPiece::QUEEN )->addPath( -1, 0, 8 );
+	addMovement( ChessPiece::QUEEN )->addPath( 1, 0, 8 );
+	addMovement( ChessPiece::QUEEN )->addPath( 0, 1, 8 );
+	addMovement( ChessPiece::QUEEN )->addPath( 0, -1, 8 );
+	addMovement( ChessPiece::QUEEN )->addPath( -1, 1, 8 );
+	addMovement( ChessPiece::QUEEN )->addPath( 1, -1, 8 );
+	addMovement( ChessPiece::QUEEN )->addPath( -1, -1, 8 );
+	addMovement( ChessPiece::QUEEN )->addPath( 1, 1, 8 );
+
+	addMovement( ChessPiece::KING )->addPath( -1, 0, 1 );
+	addMovement( ChessPiece::KING )->addPath( 1, 0, 1 );
+	addMovement( ChessPiece::KING )->addPath( 0, 1, 1 );
+	addMovement( ChessPiece::KING )->addPath( 0, -1, 1 );
+	addMovement( ChessPiece::KING )->addPath( -1, 1, 1 );
+	addMovement( ChessPiece::KING )->addPath( 1, -1, 1 );
+	addMovement( ChessPiece::KING )->addPath( -1, -1, 1 );
+	addMovement( ChessPiece::KING )->addPath( 1, 1, 1 );
 }
 
 ChessRules::~ChessRules()
 {
-	// delete pointers in vectors.
+	for ( auto movementsByType : m_movements )
+	{
+		for ( auto movement : movementsByType.second )
+		{
+			delete movement;
+			movement = nullptr;
+		}
+		movementsByType.second.clear();
+	}
+	m_movements.clear();
+}
+
+ChessMovement* ChessRules::addMovement( const ChessPiece::TYPE type )
+{
+	ChessMovement* movement = new ChessMovement();
+	m_movements[type].push_back( movement );
+	return movement;
+}
+
+const std::vector< ChessMovement* >& ChessRules::getMovements( const ChessPiece::TYPE type )
+{
+	return m_movements[type];
+}
+
+//============================== ChessMovement ================================
+
+ChessMovement::~ChessMovement()
+{
+	for ( auto path : m_paths )
+	{
+		delete path;
+		path = nullptr;
+	}
+	m_paths.clear();
+}
+
+ChessMovement* ChessMovement::addPath( const int _relUX, const int _relUY, const int _steps )
+{
+	m_paths.push_back( new LinearPath( _relUX, _relUY, _steps ) );
+	return this;
 }

@@ -25,6 +25,7 @@ Application::Application():
 Application::~Application()
 {
 	delete m_game;
+	m_game = nullptr;
 }
 
 void Application::start()

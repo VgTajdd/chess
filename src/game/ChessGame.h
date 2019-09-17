@@ -1,17 +1,30 @@
 #pragma once
 #include <vector>
+#include <map>
 #include "../chess/BaseItem.h"
+#include "../chess/ChessPiece.h"
 
 class ChessBoard;
+class ChessGame;
+
+class LinearPath
+{
+public:
+	LinearPath( const int _relUX, const int _relUY, const int _steps ) :
+		relUX( _relUX ), relUY( _relUY ), steps( _steps )
+	{};
+	int relUX;
+	int relUY;
+	int steps;
+};
 
 class ChessMovement
 {
 public:
-	ChessMovement( const int _indexPiece, const int _relHSteps, const int _relVSteps ) :
-		indexPiece( _indexPiece ), relHSteps( _relHSteps ), relVSteps( _relVSteps ) {};
-	int indexPiece;
-	int relHSteps;
-	int relVSteps;
+	ChessMovement() {};
+	~ChessMovement();
+	ChessMovement* addPath( const int _relUX, const int _relUY, const int _steps );
+	std::vector< LinearPath* > m_paths;
 };
 
 class ChessRules
@@ -19,13 +32,11 @@ class ChessRules
 public:
 	ChessRules();
 	~ChessRules();
+	const std::vector< ChessMovement* >& getMovements( const ChessPiece::TYPE type );
 private:
-	std::vector< ChessMovement* > pawnRules;
-	std::vector< ChessMovement* > rookRules;
-	std::vector< ChessMovement* > bishopRules;
-	std::vector< ChessMovement* > knightRules;
-	std::vector< ChessMovement* > queenRules;
-	std::vector< ChessMovement* > kingRules;
+	ChessMovement* addMovement( const ChessPiece::TYPE type );
+private:
+	std::map< ChessPiece::TYPE, std::vector< ChessMovement* > > m_movements;
 };
 
 class ChessPlayer : public BaseItem
@@ -47,7 +58,7 @@ public:
 		BACK
 	};
 public:
-	ChessPlayer( ChessBoard* board, const bool isBlack );
+	ChessPlayer( ChessBoard* board, ChessGame* game, const bool isBlack );
 	~ChessPlayer();
 	void update( const int dt );
 	void setActive( const bool value );
@@ -61,6 +72,7 @@ private:
 	bool m_isBlack;
 	bool m_active;
 	ChessBoard* m_board;
+	ChessGame* m_game;
 	std::vector< ChessMovement* > m_possibleMovements;
 	std::vector< ChessMovement* > m_doneMovements;
 };
@@ -77,6 +89,7 @@ public:
 	~ChessGame();
 	void update( const int dt );
 	void togglePlayerInTurn();
+	const std::vector< ChessMovement* >& getPossibleMovements( const ChessPiece::TYPE );
 private:
 	ChessBoard* m_board;
 	ChessPlayer* m_playerW;
