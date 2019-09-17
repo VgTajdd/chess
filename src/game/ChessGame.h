@@ -14,6 +14,20 @@ public:
 	int relVSteps;
 };
 
+class ChessRules
+{
+public:
+	ChessRules();
+	~ChessRules();
+private:
+	std::vector< ChessMovement* > pawnRules;
+	std::vector< ChessMovement* > rookRules;
+	std::vector< ChessMovement* > bishopRules;
+	std::vector< ChessMovement* > knightRules;
+	std::vector< ChessMovement* > queenRules;
+	std::vector< ChessMovement* > kingRules;
+};
+
 class ChessPlayer : public BaseItem
 {
 public:
@@ -68,6 +82,7 @@ private:
 	ChessPlayer* m_playerW;
 	ChessPlayer* m_playerB;
 	ChessPlayer* m_activePlayer;
+	ChessRules* m_rules;
 	bool m_finished;
 	bool m_inInBlackTurn;
 	int m_turnCounter;

@@ -4,12 +4,14 @@
 
 ChessGame::ChessGame():
 	m_board( nullptr ),
+	m_rules( nullptr ),
 	m_finished( false ),
 	m_inInBlackTurn( false )
 {
 	m_board = new ChessBoard();
 	m_playerW = new ChessPlayer( m_board, false );
 	m_playerB = new ChessPlayer( m_board, true );
+	m_rules = new ChessRules();
 
 	m_activePlayer = m_playerW;
 	m_activePlayer->setActive( true );
@@ -20,6 +22,7 @@ ChessGame::~ChessGame()
 	delete m_board;
 	delete m_playerW;
 	delete m_playerB;
+	delete m_rules;
 	m_activePlayer = nullptr;
 }
 
@@ -155,4 +158,16 @@ std::vector< ChessMovement* > ChessPlayer::getPawnPossibleMovements( const int i
 	absR = piece.row() + absIncrementV( ChessPlayer::FORWARD );
 	m_board->existsPieceAt( absR, absC );
 	return std::move( ans );
+}
+
+//============================== ChessRules ===================================
+
+ChessRules::ChessRules()
+{
+	// create vectors
+}
+
+ChessRules::~ChessRules()
+{
+	// delete pointers in vectors.
 }
