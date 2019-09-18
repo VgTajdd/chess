@@ -51,7 +51,7 @@ void ChessGame::update( const int dt )
 	}
 }
 
-const std::vector< ChessMovement* >& ChessGame::getPossibleMovements( const ChessPiece::TYPE type )
+const std::vector< ChessMovement* >& ChessGame::getPotencialMovements( const ChessPiece::TYPE type )
 {
 	return m_rules->getMovements( type );
 }
@@ -104,7 +104,7 @@ void ChessPlayer::gotoState( const int state )
 	switch ( state )
 	{
 		case ChessPlayer::ST_WAIT_FOR_POSSIBLE_MOVEMENTS:
-			getPossibleMovements();
+			getPosiblePositions();
 			break;
 		case ChessPlayer::ST_WAIT_FOR_CHOOSING_PIECE_TO_MOVE:
 			break;
@@ -116,34 +116,34 @@ void ChessPlayer::gotoState( const int state )
 	BaseItem::gotoState( state );
 }
 
-void ChessPlayer::getPossibleMovements()
+void ChessPlayer::getPosiblePositions()
 {
-	m_possibleMovements.clear();
+	m_possiblePositions.clear();
 	const auto& pieces = m_board->getPieces();
 	for ( const auto& piece : pieces )
 	{
 		if ( ( piece.isBlack() && m_isBlack ) || ( !piece.isBlack() && !m_isBlack ) )
 		{
-			std::vector< ChessMovement* > v = getPossibleMovementsByPiece( piece.index() );
-			m_possibleMovements.insert( m_possibleMovements.end(), v.begin(), v.end() );
+			std::vector< CellNode > v = getPossiblePositionsByPiece( piece.index() );
+			m_possiblePositions.insert( m_possiblePositions.end(), v.begin(), v.end() );
 		}
 	}
 }
 
-std::vector< ChessMovement* > ChessPlayer::getPossibleMovementsByPiece( const int indexPiece )
+std::vector< CellNode > ChessPlayer::getPossiblePositionsByPiece( const int indexPiece )
 {
-	std::vector< ChessMovement* > ans;
+	std::vector< CellNode > ans;
 	const auto& piece = m_board->piece( indexPiece );
 	switch ( piece.type() )
 	{
 		case ChessPiece::TYPE::PAWN:
-			ans = getPawnPossibleMovements( indexPiece );
+			ans = getPawnPosiblePositions( indexPiece );
 			break;
 	}
-	return std::move( ans );
+	return std::move( ans );// improve pawn eat in diagonal and use the double jump.
 }
 
-std::vector< ChessMovement* > ChessPlayer::getPawnPossibleMovements( const int indexPiece )
+std::vector< CellNode > ChessPlayer::getPawnPosiblePositions( const int indexPiece )
 {
 	/*
 	if ( use-only-final-position )
@@ -159,11 +159,52 @@ std::vector< ChessMovement* > ChessPlayer::getPawnPossibleMovements( const int i
 	2- fp has no friendly piece
 	*/
 
-	std::vector< ChessMovement* > ans;
-	ans = m_game->getPossibleMovements( ChessPiece::PAWN );
+	const auto& piece = m_board->piece( indexPiece );
 
-	// TODO.
+	std::vector< CellNode > ans;
 
+	const auto& potentialPositions = m_game->getPotencialMovements( ChessPiece::PAWN );
+
+	for ( const auto& mov : potentialPositions )
+	{
+		const int steps = mov->totalSteps();
+		for ( int i = 1; i <= steps; i++ )
+		{
+			const auto& node = mov->getNode( i );
+			int rr = piece.relRow() + node.r;
+			int rc = piece.relColumn() + node.c;
+
+			bool isInside = false, noFriend = false;
+
+			// Check if cell is inside the board.
+			int ar = m_isBlack ? ChessBoard::SIZE - rr - 1 : rr;
+			int ac = m_isBlack ? ChessBoard::SIZE - rc - 1 : rc;
+			isInside = ( ar >= 0 && ar < ChessBoard::SIZE && ac >= 0 && ac < ChessBoard::SIZE );
+
+			// Check if piece is friend.
+			if ( isInside )
+			{
+				if ( m_board->existsPieceAt( ar, ac ) )
+				{
+					const auto& piece = m_board->pieceAt( ar, ac );
+					noFriend = ( piece.isBlack() != m_isBlack );
+				}
+				else
+				{
+					noFriend = true;
+				}
+			}
+
+			if ( isInside && noFriend )
+			{
+				ans.push_back( CellNode( ar, ac ) );
+			}
+			else
+			{
+				break;
+			}
+		}
+	}
 	return ans;
 }
 
@@ -254,5 +295,32 @@ ChessMovement::~ChessMovement()
 ChessMovement* ChessMovement::addPath( const int _relUX, const int _relUY, const int _steps )
 {
 	m_paths.push_back( new LinearPath( _relUX, _relUY, _steps ) );
+	m_totalSteps += _steps;
 	return this;
+}
+
+CellNode ChessMovement::getNode( const int indexNode )
+{
+	int offset = 0;
+	CellNode ans;
+	for ( const auto path : m_paths )
+	{
+		if ( indexNode < path->steps + offset )
+		{
+			CellNode currentNode = path->getNode( indexNode - offset );
+			ans = ans + currentNode;
+			break;
+		}
+		offset += path->steps;
+		CellNode lastNode = path->getNode( path->steps );
+		ans = ans + lastNode;
+	}
+	return ans;
+}
+
+//============================== LinearPath ==================================
+
+CellNode LinearPath::getNode( const int indexNode )
+{
+	return CellNode( relUY * indexNode, relUX * indexNode );
 }

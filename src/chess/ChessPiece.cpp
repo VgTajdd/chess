@@ -15,10 +15,10 @@ ChessPiece::~ChessPiece()
 
 const int ChessPiece::relRow() const
 {
-	return m_isBlack ? ChessBoard::SIZE - m_row : m_row;
+	return m_isBlack ? ChessBoard::SIZE - m_row - 1 : m_row;
 }
 
 const int ChessPiece::relColumn() const
 {
-	return m_isBlack ? ChessBoard::SIZE - m_column : m_column;
+	return m_isBlack ? ChessBoard::SIZE - m_column - 1 : m_column;
 }
