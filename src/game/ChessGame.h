@@ -37,19 +37,19 @@ public:
 	int steps;
 };
 
-class ChessMovement // Change this name and implement another actual chess movement.
+class ChessPath
 {
 public:
-	ChessMovement() {};
-	~ChessMovement();
-	ChessMovement* addPath( const int _relUX, const int _relUY, const int _steps );
+	ChessPath() {};
+	~ChessPath();
+	ChessPath* addPath( const int _relUX, const int _relUY, const int _steps );
 	CellNode getNode( const int indexNode );
 	const int totalSteps() const;
 	int m_totalSteps;
 	std::vector< LinearPath* > m_paths;
 };
 
-inline const int ChessMovement::totalSteps() const
+inline const int ChessPath::totalSteps() const
 {
 	return m_totalSteps;
 }
@@ -59,11 +59,11 @@ class ChessRules
 public:
 	ChessRules();
 	~ChessRules();
-	const std::vector< ChessMovement* >& getMovements( const ChessPiece::TYPE type );
+	const std::vector< ChessPath* >& getMovements( const ChessPiece::TYPE type );
 private:
-	ChessMovement* addMovement( const ChessPiece::TYPE type );
+	ChessPath* addChessPath( const ChessPiece::TYPE type );
 private:
-	std::map< ChessPiece::TYPE, std::vector< ChessMovement* > > m_movements;
+	std::map< ChessPiece::TYPE, std::vector< ChessPath* > > m_chessPaths;
 };
 
 class ChessPlayer : public BaseItem
@@ -93,6 +93,8 @@ public:
 	void getPosiblePositions();
 	std::vector< CellNode > getPossiblePositionsByPiece( const int indexPiece );
 	std::vector< CellNode > getPawnPosiblePositions( const int indexPiece );
+	std::vector< CellNode > getKnightPossiblePositions( const int indexPiece );
+	std::vector< CellNode > getGenericPossiblePositions( const int indexPiece, const ChessPiece::TYPE type );
 	const int absIncrementH( const REL_DIRECTION_H dir ) const;
 	const int absIncrementV( const REL_DIRECTION_V dir ) const;
 private:
@@ -100,8 +102,9 @@ private:
 	bool m_active;
 	ChessBoard* m_board;
 	ChessGame* m_game;
-	std::vector< CellNode > m_possiblePositions;
-	std::vector< CellNode > m_latestPositions;
+	std::map< int, std::vector< CellNode > > m_possiblePositions; // final positions (absolute).
+	std::map< int, std::vector< CellNode > > m_latestPositions;
+	std::vector< int > m_pawnsIndexesUsedDoubleStep;
 };
 
 inline void ChessPlayer::setActive( const bool value )
@@ -116,7 +119,7 @@ public:
 	~ChessGame();
 	void update( const int dt );
 	void togglePlayerInTurn();
-	const std::vector< ChessMovement* >& getPotencialMovements( const ChessPiece::TYPE );
+	const std::vector< ChessPath* >& getPotencialMovements( const ChessPiece::TYPE );
 private:
 	ChessBoard* m_board;
 	ChessPlayer* m_playerW;
