@@ -30,11 +30,11 @@ public:
 private:
 	void setPosition( const int row, const int column );
 private:
+	TYPE m_type;
+	bool m_isBlack;
 	int m_index;
 	int m_row;
 	int m_column;
-	TYPE m_type;
-	bool m_isBlack;
 };
 
 inline const int ChessPiece::index() const
