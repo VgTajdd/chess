@@ -40,7 +40,7 @@ public:
 class ChessPath
 {
 public:
-	ChessPath() {};
+	ChessPath() : m_totalSteps( 0 ) {};
 	~ChessPath();
 	ChessPath* addPath( const int _relUX, const int _relUY, const int _steps );
 	CellNode getNode( const int indexNode );
@@ -72,9 +72,10 @@ public:
 	static const int ST_WAIT_FOR_POSSIBLE_MOVEMENTS = 1;
 	static const int ST_WAIT_FOR_CHOOSING_PIECE_TO_MOVE = 2;
 	static const int ST_WAIT_FOR_CHOOSING_POSITION_TO_MOVE = 3;
-	static const int ST_EVALUATE_POSITION = 4;
-	static const int ST_END_TURN = 5;
-	static const int ST_WIN = 6;
+	static const int ST_WAIT_FOR_PIECE_TO_MOVE = 4;
+	static const int ST_EVALUATE_POSITION = 5;
+	static const int ST_END_TURN = 6;
+	static const int ST_WIN = 7;
 	enum REL_DIRECTION_H
 	{
 		LEFT,
@@ -101,9 +102,11 @@ public:
 	std::vector< CellNode > getGenericPossiblePositions( const int indexPiece, const ChessPiece::TYPE type );
 	const int absIncrementH( const REL_DIRECTION_H dir ) const;
 	const int absIncrementV( const REL_DIRECTION_V dir ) const;
+	const char* name() const;
 	// Test methods.
 	void chooseRandomPieceToMove();
 	void chooseRandomPositionToMove();
+	void waitForPieceToMove();
 private:
 	bool m_isBlack;
 	ChessBoard* m_board;
@@ -124,7 +127,11 @@ public:
 	~ChessGame();
 	void update( const int dt );
 	void togglePlayerInTurn();
+	void clear();
+	void createGame();
+	void resetGame();
 	const std::vector< ChessPath* >& getPotentialPaths( const ChessPiece::TYPE );
+	static const char* namePiece( const ChessPiece::TYPE );
 private:
 	ChessBoard* m_board;
 	ChessPlayer* m_playerW;

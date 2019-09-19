@@ -2,13 +2,40 @@
 #include <assert.h>
 #include <string>
 #include <iostream>
+#include <ctime>
 #include "../chess/ChessBoard.h"
 
 ChessGame::ChessGame():
 	m_board( nullptr ),
 	m_rules( nullptr ),
+	m_playerW( nullptr ),
+	m_playerB( nullptr ),
+	m_activePlayer( nullptr ),
 	m_finished( false ),
 	m_inInBlackTurn( false )
+{
+	createGame();
+}
+
+ChessGame::~ChessGame()
+{
+	clear();
+}
+
+void ChessGame::clear()
+{
+	delete m_board;
+	delete m_playerW;
+	delete m_playerB;
+	delete m_rules;
+	m_board = nullptr;
+	m_rules = nullptr;
+	m_playerW = nullptr;
+	m_playerB = nullptr;
+	m_activePlayer = nullptr;
+}
+
+void ChessGame::createGame()
 {
 	m_board = new ChessBoard();
 	m_playerW = new ChessPlayer( m_board, this, false );
@@ -17,15 +44,16 @@ ChessGame::ChessGame():
 
 	m_activePlayer = m_playerW;
 	m_activePlayer->startTurn();
+
+	std::srand( int( std::time( nullptr ) ) );
+
+	std::cout << "-------------ChessGame::createGame---------------" << std::endl;
 }
 
-ChessGame::~ChessGame()
+void ChessGame::resetGame()
 {
-	delete m_board;
-	delete m_playerW;
-	delete m_playerB;
-	delete m_rules;
-	m_activePlayer = nullptr;
+	clear();
+	createGame();
 }
 
 void ChessGame::togglePlayerInTurn()
@@ -50,11 +78,29 @@ void ChessGame::update( const int dt )
 	{
 		togglePlayerInTurn();
 	}
+	else if ( m_activePlayer->getState() == ChessPlayer::ST_WIN )
+	{
+		resetGame();
+	}
 }
 
 const std::vector< ChessPath* >& ChessGame::getPotentialPaths( const ChessPiece::TYPE type )
 {
 	return m_rules->getPaths( type );
+}
+
+const char* ChessGame::namePiece( const ChessPiece::TYPE type )
+{
+	switch ( type )
+	{
+		case ChessPiece::PAWN: return "PAWN";
+		case ChessPiece::QUEEN: return "QUEEN";
+		case ChessPiece::ROOK: return "ROOK";
+		case ChessPiece::BISHOP: return "BISHOP";
+		case ChessPiece::KNIGHT: return "KNIGHT";
+		case ChessPiece::KING: return "KING";
+		default: return "UNDEFINED";
+	}
 }
 
 //============================== ChessPlayer ==================================
@@ -63,7 +109,9 @@ ChessPlayer::ChessPlayer( ChessBoard* board, ChessGame* game, const bool isBlack
 	BaseItem(),
 	m_isBlack( isBlack ),
 	m_board( board ),
-	m_game( game )
+	m_game( game ),
+	m_currentPieceToMoveIndex( -1 ),
+	m_currentMovementIndex( -1 )
 {}
 
 ChessPlayer::~ChessPlayer()
@@ -90,7 +138,7 @@ const int ChessPlayer::absIncrementV( const REL_DIRECTION_V dir ) const
 
 void ChessPlayer::gotoState( const int state )
 {
-	//std::cout << "ChessPlayer::gotoState : " << state << std::endl;
+	/*std::cout << "ChessPlayer::gotoState : " << state << std::endl;*/
 	BaseItem::gotoState( state );
 }
 
@@ -108,6 +156,9 @@ void ChessPlayer::update( const int dt )
 		case ChessPlayer::ST_WAIT_FOR_CHOOSING_POSITION_TO_MOVE:
 			chooseRandomPositionToMove(); // Test.
 			break;
+		case ChessPlayer::ST_WAIT_FOR_PIECE_TO_MOVE:
+			waitForPieceToMove(); // Test.
+			break;
 		case ChessPlayer::ST_EVALUATE_POSITION:
 			evaluateFinalPosition();
 			break;
@@ -116,9 +167,6 @@ void ChessPlayer::update( const int dt )
 
 void ChessPlayer::startTurn()
 {
-	//std::string msg = m_isBlack ? "BLACK" : "WHITE";
-	//msg.append( " starts" );
-	//std::cout << msg << std::endl;
 	m_currentPieceToMoveIndex = -1;
 	m_currentMovementIndex = -1;
 	m_possiblePositions.clear();
@@ -128,9 +176,6 @@ void ChessPlayer::startTurn()
 void ChessPlayer::endTurn()
 {
 	gotoState( ChessPlayer::ST_END_TURN );
-	//std::string msg = m_isBlack ? "BLACK" : "WHITE";
-	//msg.append( " ends" );
-	//std::cout << msg << std::endl;
 }
 
 void ChessPlayer::win()
@@ -142,6 +187,8 @@ void ChessPlayer::evaluateFinalPosition()
 {
 	const auto& finalPosition = m_possiblePositions[m_currentPieceToMoveIndex][m_currentMovementIndex];
 
+	std::string eatMsg;
+
 	// Check again this place to see if enemy piece will be eaten.
 	if ( m_board->existsPieceAt( finalPosition.r, finalPosition.c ) )
 	{
@@ -151,31 +198,7 @@ void ChessPlayer::evaluateFinalPosition()
 		m_enemyPiecesToken.push_back( piece.type() );
 		m_board->removePiece( indexPiece );
 
-		std::string msg = m_isBlack ? "BLACK" : "WHITE";
-
-		switch ( m_enemyPiecesToken.back() )
-		{
-			case ChessPiece::PAWN:
-				msg.append( " ate enemy pawn" );
-				break;
-			case ChessPiece::QUEEN:
-				msg.append( " ate enemy queen" );
-				break;
-			case ChessPiece::ROOK:
-				msg.append( " ate enemy rook" );
-				break;
-			case ChessPiece::BISHOP:
-				msg.append( " ate enemy bishop" );
-				break;
-			case ChessPiece::KNIGHT:
-				msg.append( " ate enemy knight" );
-				break;
-			case ChessPiece::KING:
-				msg.append( " ate enemy king" );
-				break;
-		}
-
-		std::cout << msg << std::endl;
+		eatMsg = std::string( "\t => ate enemy " ) + m_game->namePiece( m_enemyPiecesToken.back() );
 
 		// Jake - mate.
 		if ( m_enemyPiecesToken.back() == ChessPiece::KING )
@@ -184,31 +207,8 @@ void ChessPlayer::evaluateFinalPosition()
 		}
 	}
 
-	{
-		std::string msg = m_isBlack ? "BLACK move" : "WHITE move";
-		switch ( m_board->piece( m_currentPieceToMoveIndex ).type() )
-		{
-			case ChessPiece::PAWN:
-				msg.append( " pawn" );
-				break;
-			case ChessPiece::QUEEN:
-				msg.append( " queen" );
-				break;
-			case ChessPiece::ROOK:
-				msg.append( " rook" );
-				break;
-			case ChessPiece::BISHOP:
-				msg.append( " bishop" );
-				break;
-			case ChessPiece::KNIGHT:
-				msg.append( " knight" );
-				break;
-			case ChessPiece::KING:
-				msg.append( " king" );
-				break;
-		}
-		std::cout << msg << std::endl;
-	}
+	std::string msg = name() + std::string( " => move " ) + m_game->namePiece( m_board->piece( m_currentPieceToMoveIndex ).type() ) + eatMsg;
+	std::cout << msg << std::endl;
 
 	// Save double step if pawn.
 	if ( m_board->piece( m_currentPieceToMoveIndex ).type() == ChessPiece::PAWN )
@@ -261,7 +261,7 @@ std::vector< CellNode > ChessPlayer::getPossiblePositionsByPiece( const int inde
 			ans = getGenericPossiblePositions( indexPiece, piece.type() );
 			break;
 	}
-	return std::move( ans );// improve pawn eat in diagonal and use the double jump.
+	return std::move( ans );
 }
 
 std::vector< CellNode > ChessPlayer::getPawnPosiblePositions( const int indexPiece )
@@ -384,10 +384,6 @@ std::vector< CellNode > ChessPlayer::getKnightPossiblePositions( const int index
 		{
 			ans.push_back( CellNode( ar, ac ) );
 		}
-		else
-		{
-			break;
-		}
 	}
 
 	return ans;
@@ -444,11 +440,8 @@ std::vector< CellNode > ChessPlayer::getGenericPossiblePositions( const int inde
 	return ans;
 }
 
-#include <ctime>
-
 void ChessPlayer::chooseRandomPieceToMove()
 {
-	std::srand( int( std::time( nullptr ) ) );
 	int random_variable = std::rand();
 	double r = double( random_variable ) / double( RAND_MAX );
 	int offset = int( ( m_possiblePositions.size() - 1 ) * r );
@@ -460,13 +453,26 @@ void ChessPlayer::chooseRandomPieceToMove()
 			break;
 		}
 	}
+	assert( m_currentPieceToMoveIndex != -1 );
 	gotoState( ChessPlayer::ST_WAIT_FOR_CHOOSING_POSITION_TO_MOVE );
 }
 
 void ChessPlayer::chooseRandomPositionToMove()
 {
-	m_currentMovementIndex = 0;
+	int random_variable = std::rand();
+	double r = double( random_variable ) / double( RAND_MAX );
+	m_currentMovementIndex = int( ( m_possiblePositions[m_currentPieceToMoveIndex].size() - 1 ) * r );
+	gotoState( ChessPlayer::ST_WAIT_FOR_PIECE_TO_MOVE );
+}
+
+void ChessPlayer::waitForPieceToMove()
+{
 	gotoState( ChessPlayer::ST_EVALUATE_POSITION );
+}
+
+const char* ChessPlayer::name() const
+{
+	return m_isBlack ? "BLACK" : "WHITE";
 }
 
 //============================== ChessRules ===================================
