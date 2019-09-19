@@ -1,8 +1,11 @@
 #pragma once
 #include "BaseItem.h"
 
+class ChessBoard;
+
 class ChessPiece : public BaseItem
 {
+friend class ChessBoard;
 public:
 	enum TYPE
 	{
@@ -62,5 +65,5 @@ inline const bool ChessPiece::isBlack() const
 inline void ChessPiece::setPosition( const int row, const int column )
 {
 	m_row = row;
-	m_column = row;
+	m_column = column;
 }
