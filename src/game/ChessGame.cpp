@@ -120,22 +120,6 @@ ChessPlayer::~ChessPlayer()
 	m_game = nullptr;
 }
 
-const int ChessPlayer::absIncrementH( const REL_DIRECTION_H dir ) const
-{
-	assert( dir == ChessPlayer::REL_DIRECTION_H::LEFT || dir == ChessPlayer::REL_DIRECTION_H::RIGHT );
-	int inc = dir == ChessPlayer::REL_DIRECTION_H::LEFT ? -1 : 1;
-	if ( m_isBlack ) inc *= -1;
-	return inc;
-}
-
-const int ChessPlayer::absIncrementV( const REL_DIRECTION_V dir ) const
-{
-	assert( dir == ChessPlayer::REL_DIRECTION_V::BACK || dir == ChessPlayer::REL_DIRECTION_V::FORWARD );
-	int inc = dir == ChessPlayer::REL_DIRECTION_V::BACK ? -1 : 1;
-	if ( m_isBlack ) inc *= -1;
-	return inc;
-}
-
 void ChessPlayer::gotoState( const int state )
 {
 	/*std::cout << "ChessPlayer::gotoState : " << state << std::endl;*/

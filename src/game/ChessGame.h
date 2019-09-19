@@ -100,8 +100,6 @@ public:
 	std::vector< CellNode > getPawnPosiblePositions( const int indexPiece );
 	std::vector< CellNode > getKnightPossiblePositions( const int indexPiece );
 	std::vector< CellNode > getGenericPossiblePositions( const int indexPiece, const ChessPiece::TYPE type );
-	const int absIncrementH( const REL_DIRECTION_H dir ) const;
-	const int absIncrementV( const REL_DIRECTION_V dir ) const;
 	const char* name() const;
 	// Test methods.
 	void chooseRandomPieceToMove();
