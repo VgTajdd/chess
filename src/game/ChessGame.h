@@ -59,7 +59,7 @@ class ChessRules
 public:
 	ChessRules();
 	~ChessRules();
-	const std::vector< ChessPath* >& getMovements( const ChessPiece::TYPE type );
+	const std::vector< ChessPath* >& getPaths( const ChessPiece::TYPE type );
 private:
 	ChessPath* addChessPath( const ChessPiece::TYPE type );
 private:
@@ -69,11 +69,12 @@ private:
 class ChessPlayer : public BaseItem
 {
 public:
-	static const int ST_WAIT_FOR_POSSIBLE_MOVEMENTS = 2;
-	static const int ST_WAIT_FOR_CHOOSING_PIECE_TO_MOVE = 3;
-	static const int ST_WAIT_FOR_CHOOSING_POSITION_TO_MOVE = 4;
-	static const int ST_EVALUATE_POSITION = 5;
+	static const int ST_WAIT_FOR_POSSIBLE_MOVEMENTS = 1;
+	static const int ST_WAIT_FOR_CHOOSING_PIECE_TO_MOVE = 2;
+	static const int ST_WAIT_FOR_CHOOSING_POSITION_TO_MOVE = 3;
+	static const int ST_EVALUATE_POSITION = 4;
 	static const int ST_END_TURN = 5;
+	static const int ST_WIN = 6;
 	enum REL_DIRECTION_H
 	{
 		LEFT,
@@ -87,9 +88,12 @@ public:
 public:
 	ChessPlayer( ChessBoard* board, ChessGame* game, const bool isBlack );
 	~ChessPlayer();
-	void update( const int dt );
-	void setActive( const bool value );
 	void gotoState( const int state ) override;
+	void update( const int dt );
+	void startTurn();
+	void endTurn();
+	void win();
+	void evaluateFinalPosition();
 	void getPosiblePositions();
 	std::vector< CellNode > getPossiblePositionsByPiece( const int indexPiece );
 	std::vector< CellNode > getPawnPosiblePositions( const int indexPiece );
@@ -97,20 +101,21 @@ public:
 	std::vector< CellNode > getGenericPossiblePositions( const int indexPiece, const ChessPiece::TYPE type );
 	const int absIncrementH( const REL_DIRECTION_H dir ) const;
 	const int absIncrementV( const REL_DIRECTION_V dir ) const;
+	// Test methods.
+	void chooseRandomPieceToMove();
+	void chooseRandomPositionToMove();
 private:
 	bool m_isBlack;
-	bool m_active;
 	ChessBoard* m_board;
 	ChessGame* m_game;
-	std::map< int, std::vector< CellNode > > m_possiblePositions; // final positions (absolute).
 	std::map< int, std::vector< CellNode > > m_latestPositions;
 	std::vector< int > m_pawnsIndexesUsedDoubleStep;
+	std::vector< ChessPiece::TYPE > m_enemyPiecesToken;
+	// Temporal variables.
+	std::map< int, std::vector< CellNode > > m_possiblePositions; // final positions (absolute).
+	int m_currentPieceToMoveIndex;
+	int m_currentMovementIndex;
 };
-
-inline void ChessPlayer::setActive( const bool value )
-{
-	m_active = value;
-}
 
 class ChessGame
 {
@@ -119,7 +124,7 @@ public:
 	~ChessGame();
 	void update( const int dt );
 	void togglePlayerInTurn();
-	const std::vector< ChessPath* >& getPotencialMovements( const ChessPiece::TYPE );
+	const std::vector< ChessPath* >& getPotentialPaths( const ChessPiece::TYPE );
 private:
 	ChessBoard* m_board;
 	ChessPlayer* m_playerW;
