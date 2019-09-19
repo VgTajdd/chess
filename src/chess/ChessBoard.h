@@ -3,8 +3,11 @@
 #include <vector>
 #include <map>
 
+class ChessPlayer;
+
 class ChessBoard
 {
+friend class ChessPlayer;
 public:
 	const static int SIZE = 8;
 	const static int CELLS_COUNT = 64;
@@ -26,13 +29,15 @@ public:
 	const ChessPiece& piece( const int indexPiece );
 	const bool existsPieceAt( const int row, const int column );
 	const bool isDarkCell( const int row, const int column );
-	const std::vector< ChessPiece >& getPieces() const;
+	const std::map< int, ChessPiece >& getPieces() const;
 protected:
 	void clear();
+	void removePiece( const int indexPiece );
+	void movePiece( const int indexPiece, const int row, const int column );
 	void initInDefaultPositions();
-	void createPiece( const ChessPiece::TYPE type, const int index, const bool isBlack );
+	void createPiece( const ChessPiece::TYPE type, const int indexPosition, const bool isBlack );
 private:
-	std::vector< ChessPiece > m_pieces;
+	std::map< int, ChessPiece > m_pieces;
 	std::vector< int > m_positions;
 };
 
@@ -48,7 +53,7 @@ inline const bool ChessBoard::isEmpty() const
 
 inline const ChessPiece& ChessBoard::pieceAt( const int row, const int column )
 {
-	return m_pieces[m_positions[row * SIZE + column]];
+	return m_pieces.at( m_positions.at( row * SIZE + column ) );
 }
 
 inline const ChessPiece& ChessBoard::piece( const int indexPiece )
@@ -56,7 +61,7 @@ inline const ChessPiece& ChessBoard::piece( const int indexPiece )
 	return m_pieces.at( indexPiece );
 }
 
-inline const std::vector< ChessPiece >& ChessBoard::getPieces() const
+inline const std::map< int, ChessPiece >& ChessBoard::getPieces() const
 {
 	return m_pieces;
 }

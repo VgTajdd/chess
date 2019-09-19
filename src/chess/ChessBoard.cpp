@@ -36,11 +36,11 @@ void ChessBoard::initInDefaultPositions()
 	}
 }
 
-void ChessBoard::createPiece( const ChessPiece::TYPE type, const int index, const bool isBlack )
+void ChessBoard::createPiece( const ChessPiece::TYPE type, const int indexPosition, const bool isBlack )
 {
 	int indexPiece = int( m_pieces.size() );
-	m_pieces.push_back( ChessPiece( indexPiece, type, isBlack, index / SIZE, index % SIZE ) );
-	m_positions[index] = indexPiece;
+	m_pieces.emplace( indexPiece, ChessPiece( indexPiece, type, isBlack, indexPosition / SIZE, indexPosition % SIZE ) );
+	m_positions[indexPosition] = indexPiece;
 }
 
 const bool ChessBoard::existsPieceAt( const int row, const int column )
@@ -48,13 +48,30 @@ const bool ChessBoard::existsPieceAt( const int row, const int column )
 	assert( row >= 0 && row < SIZE && column >= 0 && column < SIZE );
 	if ( row >= 0 && row < SIZE && column >= 0 && column < SIZE )
 	{
-		const int idx = m_positions[row * SIZE + column];
-		if ( idx >= 0 && idx < int( m_pieces.size() ) )
+		const int indexPiece = m_positions.at( row * SIZE + column );
+		if ( indexPiece >= 0 )
 		{
 			return true;
 		}
 	}
 	return false;
+}
+
+void ChessBoard::removePiece( const int indexPiece )
+{
+	const int indexPosition = ( m_pieces.at( indexPiece ).row() * SIZE ) + m_pieces.at( indexPiece ).column();
+	m_positions[indexPosition] = -1;
+	m_pieces.erase( indexPiece );
+}
+
+void ChessBoard::movePiece( const int indexPiece, const int row, const int column )
+{
+	const int indexPosition = ( m_pieces.at(indexPiece).row() * SIZE ) + m_pieces.at( indexPiece ).column();
+	m_positions[indexPosition] = -1;
+	m_pieces.at( indexPiece ).setPosition( row, column );
+	const int newIndexPosition = ( row * SIZE ) + column;
+	assert( m_positions[newIndexPosition] == -1 );
+	m_positions[newIndexPosition] = indexPiece;
 }
 
 void ChessBoard::clear()
