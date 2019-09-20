@@ -125,16 +125,6 @@ public:
 	static const int ST_EVALUATE_POSITION = 5;
 	static const int ST_END_TURN = 6;
 	static const int ST_WIN = 7;
-	enum REL_DIRECTION_H
-	{
-		LEFT,
-		RIGHT
-	};
-	enum REL_DIRECTION_V
-	{
-		FORWARD,
-		BACK
-	};
 public:
 	ChessPlayer( ChessBoard* board, ChessGame* game, const bool isBlack );
 	~ChessPlayer();
