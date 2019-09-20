@@ -7,6 +7,55 @@
 class ChessBoard;
 class ChessGame;
 
+struct ChessGameConfig
+{
+	ChessGameConfig() {};
+private:
+	unsigned int _humanPlayers = 0;
+	bool _infiniteLoop = false;
+	unsigned int _movementTime = 0; // 1000
+	// AI.
+	unsigned int _decisionTimeAI = 0;
+	/*
+	0: random
+	1: eats random
+	2: eats by importance
+	3: intelligent
+	*/
+	unsigned int _levelAI;
+public:
+	const unsigned int humanPlayers() const;
+	const bool infiniteLoop() const;
+	const unsigned int movementTime() const;
+	const unsigned int decisionTimeAI() const;
+	const unsigned int levelAI() const;
+};
+
+inline const unsigned int ChessGameConfig::humanPlayers() const
+{
+	return _humanPlayers;
+}
+
+inline const bool ChessGameConfig::infiniteLoop() const
+{
+	return _infiniteLoop;
+}
+
+inline const unsigned int ChessGameConfig::movementTime() const
+{
+	return _movementTime;
+}
+
+inline const unsigned int ChessGameConfig::decisionTimeAI() const
+{
+	return _decisionTimeAI;
+}
+
+inline const unsigned int ChessGameConfig::levelAI() const
+{
+	return _levelAI;
+}
+
 struct CellNode
 {
 	int r;
@@ -104,18 +153,18 @@ public:
 	// Test methods.
 	void chooseRandomPieceToMove();
 	void chooseRandomPositionToMove();
-	void waitForPieceToMove();
+	void waitForPieceToMove( const int dt );
 private:
 	bool m_isBlack;
 	ChessBoard* m_board;
 	ChessGame* m_game;
-	std::map< int, std::vector< CellNode > > m_latestPositions;
 	std::vector< int > m_pawnsIndexesUsedDoubleStep;
 	std::vector< ChessPiece::TYPE > m_enemyPiecesToken;
 	// Temporal variables.
 	std::map< int, std::vector< CellNode > > m_possiblePositions; // final positions (absolute).
 	int m_currentPieceToMoveIndex;
 	int m_currentMovementIndex;
+	unsigned int m_timerPieceInMovement;
 };
 
 class ChessGame
@@ -129,8 +178,10 @@ public:
 	void createGame();
 	void resetGame();
 	const std::vector< ChessPath* >& getPotentialPaths( const ChessPiece::TYPE );
+	const ChessGameConfig& config() const;
 	static const char* namePiece( const ChessPiece::TYPE );
 private:
+	ChessGameConfig m_config;
 	ChessBoard* m_board;
 	ChessPlayer* m_playerW;
 	ChessPlayer* m_playerB;
@@ -140,3 +191,8 @@ private:
 	bool m_inInBlackTurn;
 	int m_turnCounter;
 };
+
+inline const ChessGameConfig& ChessGame::config() const
+{
+	return m_config;
+}

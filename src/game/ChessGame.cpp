@@ -78,7 +78,7 @@ void ChessGame::update( const int dt )
 	{
 		togglePlayerInTurn();
 	}
-	else if ( m_activePlayer->getState() == ChessPlayer::ST_WIN )
+	else if ( m_activePlayer->getState() == ChessPlayer::ST_WIN && m_config.infiniteLoop() )
 	{
 		resetGame();
 	}
@@ -141,7 +141,7 @@ void ChessPlayer::update( const int dt )
 			chooseRandomPositionToMove(); // Test.
 			break;
 		case ChessPlayer::ST_WAIT_FOR_PIECE_TO_MOVE:
-			waitForPieceToMove(); // Test.
+			waitForPieceToMove( dt );
 			break;
 		case ChessPlayer::ST_EVALUATE_POSITION:
 			evaluateFinalPosition();
@@ -151,6 +151,7 @@ void ChessPlayer::update( const int dt )
 
 void ChessPlayer::startTurn()
 {
+	m_timerPieceInMovement = 0;
 	m_currentPieceToMoveIndex = -1;
 	m_currentMovementIndex = -1;
 	m_possiblePositions.clear();
@@ -449,9 +450,13 @@ void ChessPlayer::chooseRandomPositionToMove()
 	gotoState( ChessPlayer::ST_WAIT_FOR_PIECE_TO_MOVE );
 }
 
-void ChessPlayer::waitForPieceToMove()
+void ChessPlayer::waitForPieceToMove( const int dt )
 {
-	gotoState( ChessPlayer::ST_EVALUATE_POSITION );
+	m_timerPieceInMovement += dt;
+	if ( m_timerPieceInMovement >= m_game->config().movementTime() )
+	{
+		gotoState( ChessPlayer::ST_EVALUATE_POSITION );
+	}
 }
 
 const char* ChessPlayer::name() const
