@@ -3,7 +3,8 @@
 class BaseItem
 {
 public:
-	const int static STAND = 0;
+	const int static UNDEFINED = 0;
+	const int static STAND = 1;
 public:
 	BaseItem() : m_state( BaseItem::STAND ) {};
 	~BaseItem() {};
