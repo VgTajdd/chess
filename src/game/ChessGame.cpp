@@ -103,112 +103,7 @@ const char* ChessGame::namePiece( const ChessPiece::TYPE type )
 	}
 }
 
-//============================== ChessPlayer ==================================
-
-ChessPlayer::ChessPlayer( ChessBoard* board, ChessGame* game, const bool isBlack ) :
-	BaseItem(),
-	m_isBlack( isBlack ),
-	m_board( board ),
-	m_game( game ),
-	m_currentPieceToMoveIndex( -1 ),
-	m_currentMovementIndex( -1 ),
-	m_isHuman( false )
-{}
-
-ChessPlayer::~ChessPlayer()
-{
-	m_board = nullptr;
-	m_game = nullptr;
-}
-
-void ChessPlayer::gotoState( const int state )
-{
-	/*std::cout << "ChessPlayer::gotoState : " << state << std::endl;*/
-	BaseItem::gotoState( state );
-}
-
-void ChessPlayer::update( const int dt )
-{
-	switch ( getState() )
-	{
-		case ChessPlayer::ST_WAIT_FOR_PIECE_DECISION:
-			waitForPieceDecision();
-			break;
-		case ChessPlayer::ST_WAIT_FOR_MOVEMENT_DECISION:
-			waitForMovementDecision();
-			break;
-		case ChessPlayer::ST_WAIT_FOR_PIECE_TO_MOVE:
-			waitForPieceToMove( dt );
-			break;
-		case ChessPlayer::ST_EVALUATE_POSITION:
-			evaluateFinalPosition();
-			break;
-	}
-}
-
-void ChessPlayer::startTurn()
-{
-	m_timerPieceInMovement = 0;
-	m_currentPieceToMoveIndex = -1;
-	m_currentMovementIndex = -1;
-	m_possiblePositions.clear();
-	gotoState( ChessPlayer::ST_WAIT_FOR_PIECE_DECISION );
-}
-
-void ChessPlayer::endTurn()
-{
-	gotoState( ChessPlayer::ST_END_TURN );
-}
-
-void ChessPlayer::win()
-{
-	gotoState( ChessPlayer::ST_WIN );
-}
-
-void ChessPlayer::evaluateFinalPosition()
-{
-	const auto& finalPosition = m_possiblePositions[m_currentPieceToMoveIndex][m_currentMovementIndex];
-
-	std::string eatMsg;
-
-	// Check again this place to see if enemy piece will be eaten.
-	if ( m_board->existsPieceAt( finalPosition.r, finalPosition.c ) )
-	{
-		const auto& piece = m_board->pieceAt( finalPosition.r, finalPosition.c );
-		assert( piece.isBlack() != m_isBlack );
-		const int indexPiece = piece.index();
-		m_enemyPiecesToken.push_back( piece.type() );
-		m_board->removePiece( indexPiece );
-
-		eatMsg = std::string( "\t => ate enemy " ) + m_game->namePiece( m_enemyPiecesToken.back() );
-
-		// Jake - mate.
-		if ( m_enemyPiecesToken.back() == ChessPiece::KING )
-		{
-			win();
-		}
-	}
-
-	std::string msg = name() + std::string( " => move " ) + m_game->namePiece( m_board->piece( m_currentPieceToMoveIndex ).type() ) + eatMsg;
-	std::cout << msg << std::endl;
-
-	// Save double step if pawn.
-	if ( m_board->piece( m_currentPieceToMoveIndex ).type() == ChessPiece::PAWN )
-	{
-		if ( std::abs( finalPosition.r - m_board->piece( m_currentPieceToMoveIndex ).row() ) == 2 )
-		{
-			m_pawnsUsedDoubleStep.push_back( m_currentPieceToMoveIndex );
-		}
-	}
-
-	// Make the movement.
-	m_board->movePiece( m_currentPieceToMoveIndex, finalPosition.r, finalPosition.c );
-
-	if ( getState() != ChessPlayer::ST_WIN )
-	{
-		endTurn();
-	}
-}
+// Helper methods.
 
 /**
  This method give us a map { indexPiece, [vector of absolute final positions] }
@@ -216,7 +111,7 @@ void ChessPlayer::evaluateFinalPosition()
 void ChessGame::getPosiblePositions( std::map< int, std::vector< CellNode > >& possiblePositions, const bool playerBlack, const bool onlyEat )
 {
 	const auto& pieces = m_board->getPieces();
-	for ( const auto& [key, piece] : pieces )
+	for ( const auto&[key, piece] : pieces )
 	{
 		if ( ( piece.isBlack() && playerBlack ) || ( !piece.isBlack() && !playerBlack ) )
 		{
@@ -279,7 +174,7 @@ std::vector< CellNode > ChessGame::getPawnPosiblePositions( const int indexPiece
 		const int steps = cp->totalSteps();
 		if ( steps == 2 )
 		{
-			if ( std::find( p->pawnsUsedDoubleStep().begin(), p->pawnsUsedDoubleStep().end(), indexPiece) != p->pawnsUsedDoubleStep().end() )
+			if ( std::find( p->pawnsUsedDoubleStep().begin(), p->pawnsUsedDoubleStep().end(), indexPiece ) != p->pawnsUsedDoubleStep().end() )
 			{
 				break;
 			}
@@ -465,6 +360,113 @@ std::vector< CellNode > ChessGame::getGenericPossiblePositions( const int indexP
 		}
 	}
 	return ans;
+}
+
+//============================== ChessPlayer ==================================
+
+ChessPlayer::ChessPlayer( ChessBoard* board, ChessGame* game, const bool isBlack ) :
+	BaseItem(),
+	m_isBlack( isBlack ),
+	m_board( board ),
+	m_game( game ),
+	m_currentPieceToMoveIndex( -1 ),
+	m_currentMovementIndex( -1 ),
+	m_isHuman( false )
+{}
+
+ChessPlayer::~ChessPlayer()
+{
+	m_board = nullptr;
+	m_game = nullptr;
+}
+
+void ChessPlayer::gotoState( const int state )
+{
+	/*std::cout << "ChessPlayer::gotoState : " << state << std::endl;*/
+	BaseItem::gotoState( state );
+}
+
+void ChessPlayer::update( const int dt )
+{
+	switch ( getState() )
+	{
+		case ChessPlayer::ST_WAIT_FOR_PIECE_DECISION:
+			waitForPieceDecision();
+			break;
+		case ChessPlayer::ST_WAIT_FOR_MOVEMENT_DECISION:
+			waitForMovementDecision();
+			break;
+		case ChessPlayer::ST_WAIT_FOR_PIECE_TO_MOVE:
+			waitForPieceToMove( dt );
+			break;
+		case ChessPlayer::ST_EVALUATE_POSITION:
+			evaluateFinalPosition();
+			break;
+	}
+}
+
+void ChessPlayer::startTurn()
+{
+	m_timerPieceInMovement = 0;
+	m_currentPieceToMoveIndex = -1;
+	m_currentMovementIndex = -1;
+	m_possiblePositions.clear();
+	gotoState( ChessPlayer::ST_WAIT_FOR_PIECE_DECISION );
+}
+
+void ChessPlayer::endTurn()
+{
+	gotoState( ChessPlayer::ST_END_TURN );
+}
+
+void ChessPlayer::win()
+{
+	gotoState( ChessPlayer::ST_WIN );
+}
+
+void ChessPlayer::evaluateFinalPosition()
+{
+	const auto& finalPosition = m_possiblePositions[m_currentPieceToMoveIndex][m_currentMovementIndex];
+
+	std::string eatMsg;
+
+	// Check again this place to see if enemy piece will be eaten.
+	if ( m_board->existsPieceAt( finalPosition.r, finalPosition.c ) )
+	{
+		const auto& piece = m_board->pieceAt( finalPosition.r, finalPosition.c );
+		assert( piece.isBlack() != m_isBlack );
+		const int indexPiece = piece.index();
+		m_enemyPiecesToken.push_back( piece.type() );
+		m_board->removePiece( indexPiece );
+
+		eatMsg = std::string( "\t => ate enemy " ) + m_game->namePiece( m_enemyPiecesToken.back() );
+
+		// Jake - mate.
+		if ( m_enemyPiecesToken.back() == ChessPiece::KING )
+		{
+			win();
+		}
+	}
+
+	std::string msg = name() + std::string( " => move " ) + m_game->namePiece( m_board->piece( m_currentPieceToMoveIndex ).type() ) + eatMsg;
+	std::cout << msg << std::endl;
+
+	// Save double step if pawn.
+	if ( m_board->piece( m_currentPieceToMoveIndex ).type() == ChessPiece::PAWN )
+	{
+		if ( std::abs( finalPosition.r - m_board->piece( m_currentPieceToMoveIndex ).row() ) == 2 )
+		{
+			m_pawnsUsedDoubleStep.push_back( m_currentPieceToMoveIndex );
+		}
+	}
+
+	// Make the movement.
+	m_board->movePiece( m_currentPieceToMoveIndex, finalPosition.r, finalPosition.c );
+
+	if ( getState() != ChessPlayer::ST_WIN )
+	{
+		endTurn();
+	}
 }
 
 void ChessPlayer::chooseRandomPieceToMove()
