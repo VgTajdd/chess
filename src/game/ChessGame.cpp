@@ -111,7 +111,8 @@ ChessPlayer::ChessPlayer( ChessBoard* board, ChessGame* game, const bool isBlack
 	m_board( board ),
 	m_game( game ),
 	m_currentPieceToMoveIndex( -1 ),
-	m_currentMovementIndex( -1 )
+	m_currentMovementIndex( -1 ),
+	m_isHuman( false )
 {}
 
 ChessPlayer::~ChessPlayer()
@@ -130,15 +131,11 @@ void ChessPlayer::update( const int dt )
 {
 	switch ( getState() )
 	{
-		case ChessPlayer::ST_WAIT_FOR_POSSIBLE_MOVEMENTS:
-			getPosiblePositions();
-			gotoState( ChessPlayer::ST_WAIT_FOR_CHOOSING_PIECE_TO_MOVE );
+		case ChessPlayer::ST_WAIT_FOR_PIECE_DECISION:
+			waitForPieceDecision();
 			break;
-		case ChessPlayer::ST_WAIT_FOR_CHOOSING_PIECE_TO_MOVE:
-			chooseRandomPieceToMove(); // Test.
-			break;
-		case ChessPlayer::ST_WAIT_FOR_CHOOSING_POSITION_TO_MOVE:
-			chooseRandomPositionToMove(); // Test.
+		case ChessPlayer::ST_WAIT_FOR_MOVEMENT_DECISION:
+			waitForMovementDecision();
 			break;
 		case ChessPlayer::ST_WAIT_FOR_PIECE_TO_MOVE:
 			waitForPieceToMove( dt );
@@ -155,7 +152,7 @@ void ChessPlayer::startTurn()
 	m_currentPieceToMoveIndex = -1;
 	m_currentMovementIndex = -1;
 	m_possiblePositions.clear();
-	gotoState( ChessPlayer::ST_WAIT_FOR_POSSIBLE_MOVEMENTS );
+	gotoState( ChessPlayer::ST_WAIT_FOR_PIECE_DECISION );
 }
 
 void ChessPlayer::endTurn()
@@ -200,7 +197,7 @@ void ChessPlayer::evaluateFinalPosition()
 	{
 		if ( std::abs( finalPosition.r - m_board->piece( m_currentPieceToMoveIndex ).row() ) == 2 )
 		{
-			m_pawnsIndexesUsedDoubleStep.push_back( m_currentPieceToMoveIndex );
+			m_pawnsUsedDoubleStep.push_back( m_currentPieceToMoveIndex );
 		}
 	}
 
@@ -213,43 +210,46 @@ void ChessPlayer::evaluateFinalPosition()
 	}
 }
 
-void ChessPlayer::getPosiblePositions()
+/**
+ This method give us a map { indexPiece, [vector of absolute final positions] }
+*/
+void ChessGame::getPosiblePositions( std::map< int, std::vector< CellNode > >& possiblePositions, const bool playerBlack, const bool onlyEat )
 {
 	const auto& pieces = m_board->getPieces();
 	for ( const auto& [key, piece] : pieces )
 	{
-		if ( ( piece.isBlack() && m_isBlack ) || ( !piece.isBlack() && !m_isBlack ) )
+		if ( ( piece.isBlack() && playerBlack ) || ( !piece.isBlack() && !playerBlack ) )
 		{
-			std::vector< CellNode > v = getPossiblePositionsByPiece( piece.index() );
+			std::vector< CellNode > v = getPossiblePositionsByPiece( piece.index(), playerBlack, onlyEat );
 			if ( v.empty() ) continue;
-			m_possiblePositions[piece.index()].insert( m_possiblePositions[piece.index()].end(), v.begin(), v.end() );
+			possiblePositions[piece.index()].insert( possiblePositions[piece.index()].end(), v.begin(), v.end() );
 		}
 	}
 }
 
-std::vector< CellNode > ChessPlayer::getPossiblePositionsByPiece( const int indexPiece )
+std::vector< CellNode > ChessGame::getPossiblePositionsByPiece( const int indexPiece, const bool playerBlack, const bool onlyEat )
 {
 	std::vector< CellNode > ans;
 	const auto& piece = m_board->piece( indexPiece );
 	switch ( piece.type() )
 	{
 		case ChessPiece::TYPE::PAWN:
-			ans = getPawnPosiblePositions( indexPiece );
+			ans = getPawnPosiblePositions( indexPiece, playerBlack, onlyEat );
 			break;
 		case ChessPiece::TYPE::KNIGHT:
-			ans = getKnightPossiblePositions( indexPiece );
+			ans = getKnightPossiblePositions( indexPiece, playerBlack, onlyEat );
 			break;
 		case ChessPiece::TYPE::ROOK:
 		case ChessPiece::TYPE::BISHOP:
 		case ChessPiece::TYPE::QUEEN:
 		case ChessPiece::TYPE::KING:
-			ans = getGenericPossiblePositions( indexPiece, piece.type() );
+			ans = getGenericPossiblePositions( indexPiece, playerBlack, onlyEat, piece.type() );
 			break;
 	}
 	return std::move( ans );
 }
 
-std::vector< CellNode > ChessPlayer::getPawnPosiblePositions( const int indexPiece )
+std::vector< CellNode > ChessGame::getPawnPosiblePositions( const int indexPiece, const bool playerBlack, const bool onlyEat )
 {
 	/*
 	if ( use-only-final-position )
@@ -269,7 +269,9 @@ std::vector< CellNode > ChessPlayer::getPawnPosiblePositions( const int indexPie
 
 	std::vector< CellNode > ans;
 
-	const auto& potentialPaths = m_game->getPotentialPaths( ChessPiece::PAWN );
+	const auto& potentialPaths = getPotentialPaths( ChessPiece::PAWN );
+
+	const auto& p = player( playerBlack );
 
 	for ( const auto& cp : potentialPaths )
 	{
@@ -277,7 +279,7 @@ std::vector< CellNode > ChessPlayer::getPawnPosiblePositions( const int indexPie
 		const int steps = cp->totalSteps();
 		if ( steps == 2 )
 		{
-			if ( std::find( m_pawnsIndexesUsedDoubleStep.begin(), m_pawnsIndexesUsedDoubleStep.end(), indexPiece) != m_pawnsIndexesUsedDoubleStep.end() )
+			if ( std::find( p->pawnsUsedDoubleStep().begin(), p->pawnsUsedDoubleStep().end(), indexPiece) != p->pawnsUsedDoubleStep().end() )
 			{
 				break;
 			}
@@ -293,8 +295,8 @@ std::vector< CellNode > ChessPlayer::getPawnPosiblePositions( const int indexPie
 			bool isInside = false, noFriend = false, isEmpty = false;
 
 			// Check if cell is inside the board.
-			int ar = m_isBlack ? ChessBoard::SIZE - rr - 1 : rr;
-			int ac = m_isBlack ? ChessBoard::SIZE - rc - 1 : rc;
+			int ar = playerBlack ? ChessBoard::SIZE - rr - 1 : rr;
+			int ac = playerBlack ? ChessBoard::SIZE - rc - 1 : rc;
 			isInside = ( ar >= 0 && ar < ChessBoard::SIZE && ac >= 0 && ac < ChessBoard::SIZE );
 
 			// Check if piece is friend.
@@ -303,38 +305,52 @@ std::vector< CellNode > ChessPlayer::getPawnPosiblePositions( const int indexPie
 				if ( m_board->existsPieceAt( ar, ac ) )
 				{
 					const auto& piece = m_board->pieceAt( ar, ac );
-					noFriend = ( piece.isBlack() != m_isBlack );
+					noFriend = ( piece.isBlack() != playerBlack );
 				}
 				else
 				{
 					isEmpty = true;
 				}
 			}
-
-			if ( isDiagonal && isInside && noFriend )
+			if ( onlyEat )
 			{
-				ans.push_back( CellNode( ar, ac ) );
-			}
-			else if ( !isDiagonal && isInside && isEmpty )
-			{
-				ans.push_back( CellNode( ar, ac ) );
+				if ( isDiagonal )
+				{
+					if ( isInside && noFriend )
+					{
+						ans.push_back( CellNode( ar, ac ) );
+					}
+				}
 			}
 			else
 			{
-				break;
+				if ( isDiagonal )
+				{
+					if ( isInside && noFriend )
+					{
+						ans.push_back( CellNode( ar, ac ) );
+					}
+				}
+				else
+				{
+					if ( isInside && ( noFriend || isEmpty ) )
+					{
+						ans.push_back( CellNode( ar, ac ) );
+					}
+				}
 			}
 		}
 	}
 	return ans;
 }
 
-std::vector< CellNode > ChessPlayer::getKnightPossiblePositions( const int indexPiece )
+std::vector< CellNode > ChessGame::getKnightPossiblePositions( const int indexPiece, const bool playerBlack, const bool onlyEat )
 {
 	const auto& piece = m_board->piece( indexPiece );
 
 	std::vector< CellNode > ans;
 
-	const auto& potentialPaths = m_game->getPotentialPaths( ChessPiece::KNIGHT );
+	const auto& potentialPaths = getPotentialPaths( ChessPiece::KNIGHT );
 
 	for ( const auto& cp : potentialPaths )
 	{
@@ -347,8 +363,8 @@ std::vector< CellNode > ChessPlayer::getKnightPossiblePositions( const int index
 		bool isInside = false, noFriend = false, isEmpty = false;
 
 		// Check if cell is inside the board.
-		int ar = m_isBlack ? ChessBoard::SIZE - rr - 1 : rr;
-		int ac = m_isBlack ? ChessBoard::SIZE - rc - 1 : rc;
+		int ar = playerBlack ? ChessBoard::SIZE - rr - 1 : rr;
+		int ac = playerBlack ? ChessBoard::SIZE - rc - 1 : rc;
 		isInside = ( ar >= 0 && ar < ChessBoard::SIZE && ac >= 0 && ac < ChessBoard::SIZE );
 
 		// Check if piece is friend.
@@ -357,7 +373,7 @@ std::vector< CellNode > ChessPlayer::getKnightPossiblePositions( const int index
 			if ( m_board->existsPieceAt( ar, ac ) )
 			{
 				const auto& piece = m_board->pieceAt( ar, ac );
-				noFriend = ( piece.isBlack() != m_isBlack );
+				noFriend = ( piece.isBlack() != playerBlack );
 			}
 			else
 			{
@@ -365,22 +381,32 @@ std::vector< CellNode > ChessPlayer::getKnightPossiblePositions( const int index
 			}
 		}
 
-		if ( isInside && ( noFriend || isEmpty ) )
+		if ( onlyEat )
 		{
-			ans.push_back( CellNode( ar, ac ) );
+			if ( isInside && noFriend )
+			{
+				ans.push_back( CellNode( ar, ac ) );
+			}
+		}
+		else
+		{
+			if ( isInside && ( noFriend || isEmpty ) )
+			{
+				ans.push_back( CellNode( ar, ac ) );
+			}
 		}
 	}
 
 	return ans;
 }
 
-std::vector< CellNode > ChessPlayer::getGenericPossiblePositions( const int indexPiece, const ChessPiece::TYPE type )
+std::vector< CellNode > ChessGame::getGenericPossiblePositions( const int indexPiece, const bool playerBlack, const bool onlyEat, const ChessPiece::TYPE type )
 {
 	const auto& piece = m_board->piece( indexPiece );
 
 	std::vector< CellNode > ans;
 
-	const auto& potentialPaths = m_game->getPotentialPaths( type );
+	const auto& potentialPaths = getPotentialPaths( type );
 
 	for ( const auto& cp : potentialPaths )
 	{
@@ -394,8 +420,8 @@ std::vector< CellNode > ChessPlayer::getGenericPossiblePositions( const int inde
 			bool isInside = false, noFriend = false, isEmpty = false;
 
 			// Check if cell is inside the board.
-			int ar = m_isBlack ? ChessBoard::SIZE - rr - 1 : rr;
-			int ac = m_isBlack ? ChessBoard::SIZE - rc - 1 : rc;
+			int ar = playerBlack ? ChessBoard::SIZE - rr - 1 : rr;
+			int ac = playerBlack ? ChessBoard::SIZE - rc - 1 : rc;
 			isInside = ( ar >= 0 && ar < ChessBoard::SIZE && ac >= 0 && ac < ChessBoard::SIZE );
 
 			// Check if piece is friend.
@@ -404,21 +430,37 @@ std::vector< CellNode > ChessPlayer::getGenericPossiblePositions( const int inde
 				if ( m_board->existsPieceAt( ar, ac ) )
 				{
 					const auto& piece = m_board->pieceAt( ar, ac );
-					noFriend = ( piece.isBlack() != m_isBlack );
+					noFriend = ( piece.isBlack() != playerBlack );
 				}
 				else
 				{
 					isEmpty = true;
 				}
 			}
-
-			if ( isInside && ( noFriend || isEmpty ) )
+			if ( onlyEat )
 			{
-				ans.push_back( CellNode( ar, ac ) );
+				if ( isInside && ( noFriend || isEmpty ) )
+				{
+					if ( noFriend )
+					{
+						ans.push_back( CellNode( ar, ac ) );
+					}
+				}
+				else
+				{
+					break;
+				}
 			}
 			else
 			{
-				break;
+				if ( isInside && ( noFriend || isEmpty ) )
+				{
+					ans.push_back( CellNode( ar, ac ) );
+				}
+				else
+				{
+					break;
+				}
 			}
 		}
 	}
@@ -439,7 +481,6 @@ void ChessPlayer::chooseRandomPieceToMove()
 		}
 	}
 	assert( m_currentPieceToMoveIndex != -1 );
-	gotoState( ChessPlayer::ST_WAIT_FOR_CHOOSING_POSITION_TO_MOVE );
 }
 
 void ChessPlayer::chooseRandomPositionToMove()
@@ -447,7 +488,6 @@ void ChessPlayer::chooseRandomPositionToMove()
 	int random_variable = std::rand();
 	double r = double( random_variable ) / double( RAND_MAX );
 	m_currentMovementIndex = int( ( m_possiblePositions[m_currentPieceToMoveIndex].size() - 1 ) * r );
-	gotoState( ChessPlayer::ST_WAIT_FOR_PIECE_TO_MOVE );
 }
 
 void ChessPlayer::waitForPieceToMove( const int dt )
@@ -459,9 +499,97 @@ void ChessPlayer::waitForPieceToMove( const int dt )
 	}
 }
 
+void ChessPlayer::waitForPieceDecision()
+{
+	if ( !m_isHuman )
+	{
+		generateDecision();
+	}
+	if ( m_currentPieceToMoveIndex != -1 )
+	{
+		gotoState( ChessPlayer::ST_WAIT_FOR_MOVEMENT_DECISION );
+	}
+}
+
+void ChessPlayer::waitForMovementDecision()
+{
+	if ( m_currentMovementIndex != -1 )
+	{
+		gotoState( ChessPlayer::ST_WAIT_FOR_PIECE_TO_MOVE );
+	}
+}
+
 const char* ChessPlayer::name() const
 {
 	return m_isBlack ? "BLACK" : "WHITE";
+}
+
+void ChessPlayer::generateDecision()
+{
+	/*
+	This method will set values for this variables:
+	- m_currentPieceToMoveIndex
+	- m_currentMovementIndex
+	based on the current levelAI.
+	*/
+
+	switch ( m_game->config().levelAI() )
+	{
+		case 0: randomDecision(); break;
+		case 1: eatRandomDecision(); break;
+		case 2: eatByhierarchyDecision(); break;
+		case 3: intelligentDecision(); break;
+	}
+
+	// TODO: Generate message or validation if something wrong happens.
+}
+
+void ChessPlayer::randomDecision()
+{
+	m_game->getPosiblePositions( m_possiblePositions, m_isBlack, false );
+	chooseRandomPieceToMove();
+	chooseRandomPositionToMove();
+}
+
+void ChessPlayer::eatRandomDecision()
+{
+	m_game->getPosiblePositions( m_possiblePositions, m_isBlack, true );
+	if ( m_possiblePositions.empty() )
+	{
+		m_game->getPosiblePositions( m_possiblePositions, m_isBlack, false );
+	}
+	chooseRandomPieceToMove();
+	chooseRandomPositionToMove();
+}
+
+void ChessPlayer::eatByhierarchyDecision()
+{
+	// TODO.
+}
+
+void ChessPlayer::intelligentDecision()
+{
+	bool decisionTakken = false;
+
+	// Protection.
+	std::vector< int > v, e;
+	m_game->getEatables( this, v, e );
+
+	// Make jake.
+
+	// Make jake mate.
+
+	// Eat enemy.
+}
+
+void ChessGame::getEatables( const ChessPlayer* player, std::vector< int >& v, std::vector< int >& e )
+{
+	std::map< int, std::vector< CellNode > > possiblePositions;
+	getPosiblePositions( possiblePositions, !player->isBlack(), true );
+	if ( !possiblePositions.empty() )
+	{
+		//...
+	}
 }
 
 //============================== ChessRules ===================================

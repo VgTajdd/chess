@@ -22,7 +22,7 @@ private:
 	2: eats by importance
 	3: intelligent
 	*/
-	unsigned int _levelAI;
+	unsigned int _levelAI = 1;
 public:
 	const unsigned int humanPlayers() const;
 	const bool infiniteLoop() const;
@@ -118,9 +118,8 @@ private:
 class ChessPlayer : public BaseItem
 {
 public:
-	static const int ST_WAIT_FOR_POSSIBLE_MOVEMENTS = 1;
-	static const int ST_WAIT_FOR_CHOOSING_PIECE_TO_MOVE = 2;
-	static const int ST_WAIT_FOR_CHOOSING_POSITION_TO_MOVE = 3;
+	static const int ST_WAIT_FOR_PIECE_DECISION = 2;
+	static const int ST_WAIT_FOR_MOVEMENT_DECISION = 3;
 	static const int ST_WAIT_FOR_PIECE_TO_MOVE = 4;
 	static const int ST_EVALUATE_POSITION = 5;
 	static const int ST_END_TURN = 6;
@@ -134,28 +133,49 @@ public:
 	void endTurn();
 	void win();
 	void evaluateFinalPosition();
-	void getPosiblePositions();
-	std::vector< CellNode > getPossiblePositionsByPiece( const int indexPiece );
-	std::vector< CellNode > getPawnPosiblePositions( const int indexPiece );
-	std::vector< CellNode > getKnightPossiblePositions( const int indexPiece );
-	std::vector< CellNode > getGenericPossiblePositions( const int indexPiece, const ChessPiece::TYPE type );
+
+	// Decision methods.
+	void generateDecision();
+	void randomDecision();
+	void eatRandomDecision();
+	void eatByhierarchyDecision();
+	void intelligentDecision();
+
+	void waitForPieceDecision();
+	void waitForMovementDecision();
+	void waitForPieceToMove( const int dt );
+
 	const char* name() const;
+	const bool isBlack() const;
+	const std::vector< int >& pawnsUsedDoubleStep() const;
+
 	// Test methods.
 	void chooseRandomPieceToMove();
 	void chooseRandomPositionToMove();
-	void waitForPieceToMove( const int dt );
 private:
 	bool m_isBlack;
+	bool m_isHuman;
 	ChessBoard* m_board;
 	ChessGame* m_game;
-	std::vector< int > m_pawnsIndexesUsedDoubleStep;
+	std::vector< int > m_pawnsUsedDoubleStep;
 	std::vector< ChessPiece::TYPE > m_enemyPiecesToken;
+
 	// Temporal variables.
 	std::map< int, std::vector< CellNode > > m_possiblePositions; // final positions (absolute).
 	int m_currentPieceToMoveIndex;
 	int m_currentMovementIndex;
 	unsigned int m_timerPieceInMovement;
 };
+
+inline const std::vector< int >& ChessPlayer::pawnsUsedDoubleStep() const
+{
+	return m_pawnsUsedDoubleStep;
+}
+
+inline const bool ChessPlayer::isBlack() const
+{
+	return m_isBlack;
+}
 
 class ChessGame
 {
@@ -170,6 +190,15 @@ public:
 	const std::vector< ChessPath* >& getPotentialPaths( const ChessPiece::TYPE );
 	const ChessGameConfig& config() const;
 	static const char* namePiece( const ChessPiece::TYPE );
+	const ChessPlayer* const player( const bool isBlack ) const;
+
+	// Helper methods.
+	void getEatables( const ChessPlayer* player, std::vector< int >&, std::vector< int >& );
+	void getPosiblePositions( std::map< int, std::vector< CellNode > >& possiblePositions, const bool playerBlack, const bool onlyEat );
+	std::vector< CellNode > getPossiblePositionsByPiece( const int indexPiece, const bool playerBlack, const bool onlyEat );
+	std::vector< CellNode > getPawnPosiblePositions( const int indexPiece, const bool playerBlack, const bool onlyEat );
+	std::vector< CellNode > getKnightPossiblePositions( const int indexPiece, const bool playerBlack, const bool onlyEat );
+	std::vector< CellNode > getGenericPossiblePositions( const int indexPiece, const bool playerBlack, const bool onlyEat, const ChessPiece::TYPE type );
 private:
 	ChessGameConfig m_config;
 	ChessBoard* m_board;
@@ -185,4 +214,8 @@ private:
 inline const ChessGameConfig& ChessGame::config() const
 {
 	return m_config;
+}
+inline const ChessPlayer* const ChessGame::player( const bool isBlack ) const
+{
+	return isBlack ? m_playerB : m_playerW;
 }
