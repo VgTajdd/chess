@@ -43,7 +43,7 @@ void ChessBoard::createPiece( const ChessPiece::TYPE type, const int indexPositi
 	m_positions[indexPosition] = indexPiece;
 }
 
-const bool ChessBoard::existsPieceAt( const int row, const int column )
+const bool ChessBoard::existsPieceAt( const int row, const int column ) const
 {
 	assert( row >= 0 && row < SIZE && column >= 0 && column < SIZE );
 	if ( row >= 0 && row < SIZE && column >= 0 && column < SIZE )

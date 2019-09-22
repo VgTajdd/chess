@@ -25,10 +25,11 @@ protected:
 	std::map< ChessPiece::TYPE, std::vector< int > > all_idxs;
 public:
 	const bool isEmpty() const;
-	const ChessPiece& pieceAt( const int row, const int column );
-	const ChessPiece& piece( const int indexPiece );
-	const bool existsPieceAt( const int row, const int column );
-	const bool isDarkCell( const int row, const int column );
+	const ChessPiece& pieceAt( const int row, const int column ) const;
+	const ChessPiece& piece( const int indexPiece ) const;
+	const bool existsPiece( const int indexPiece ) const;
+	const bool existsPieceAt( const int row, const int column ) const;
+	const bool isDarkCell( const int row, const int column ) const;
 	const std::map< int, ChessPiece >& getPieces() const;
 protected:
 	void clear();
@@ -41,7 +42,7 @@ private:
 	std::vector< int > m_positions;
 };
 
-inline const bool ChessBoard::isDarkCell( const int row, const int column )
+inline const bool ChessBoard::isDarkCell( const int row, const int column ) const
 {
 	return ( ( ( row % 2 ) + ( column % 2 ) ) % 2 == 0 );
 }
@@ -50,13 +51,17 @@ inline const bool ChessBoard::isEmpty() const
 {
 	return m_pieces.empty();
 }
+inline const bool ChessBoard::existsPiece( const int indexPiece ) const
+{
+	return ( m_pieces.find( indexPiece ) != m_pieces.end() );
+}
 
-inline const ChessPiece& ChessBoard::pieceAt( const int row, const int column )
+inline const ChessPiece& ChessBoard::pieceAt( const int row, const int column ) const
 {
 	return m_pieces.at( m_positions.at( row * SIZE + column ) );
 }
 
-inline const ChessPiece& ChessBoard::piece( const int indexPiece )
+inline const ChessPiece& ChessBoard::piece( const int indexPiece ) const
 {
 	return m_pieces.at( indexPiece );
 }
