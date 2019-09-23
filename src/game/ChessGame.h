@@ -12,17 +12,17 @@ struct ChessGameConfig
 	ChessGameConfig() {};
 private:
 	unsigned int _humanPlayers = 0;
-	bool _infiniteLoop = false;
+	bool _infiniteLoop = true;
 	unsigned int _movementTime = 0; // 1000
-	// AI.
-	unsigned int _decisionTimeAI = 0;
-	/*
+	/* AI.
 	0: random
-	1: eats random
-	2: eats by importance
-	3: intelligent
+	1: eats (if possible) random
+	2: eats (if possible) random only safe
+	3: eats (if possible) by importance only safe
+	4: intelligent
 	*/
-	unsigned int _levelAI = 1;
+	unsigned int _levelAI = 3;
+	unsigned int _decisionTimeAI = 0;
 public:
 	const unsigned int humanPlayers() const;
 	const bool infiniteLoop() const;
@@ -108,22 +108,28 @@ class ChessRules
 public:
 	ChessRules();
 	~ChessRules();
-	const std::vector< ChessPath* >& getPaths( const ChessPiece::TYPE type );
+	const std::vector< ChessPath* >& getPaths( const ChessPiece::TYPE type ) const;
+	const int getImportance( const ChessPiece::TYPE type ) const;
 private:
 	ChessPath* addChessPath( const ChessPiece::TYPE type );
 private:
 	std::map< ChessPiece::TYPE, std::vector< ChessPath* > > m_chessPaths;
 };
 
+inline const std::vector< ChessPath* >& ChessRules::getPaths( const ChessPiece::TYPE type ) const
+{
+	return m_chessPaths.at( type );
+}
+
 class ChessPlayer : public BaseItem
 {
 public:
-	static const int ST_WAIT_FOR_PIECE_DECISION = 2;
-	static const int ST_WAIT_FOR_MOVEMENT_DECISION = 3;
-	static const int ST_WAIT_FOR_PIECE_TO_MOVE = 4;
-	static const int ST_EVALUATE_POSITION = 5;
-	static const int ST_END_TURN = 6;
-	static const int ST_WIN = 7;
+	static const int ST_WAIT_FOR_PIECE_DECISION = 1;
+	static const int ST_WAIT_FOR_MOVEMENT_DECISION = 2;
+	static const int ST_WAIT_FOR_PIECE_TO_MOVE = 3;
+	static const int ST_EVALUATE_POSITION = 4;
+	static const int ST_END_TURN = 5;
+	static const int ST_WIN = 6;
 public:
 	ChessPlayer( ChessBoard* board, ChessGame* game, const bool isBlack );
 	~ChessPlayer();
@@ -138,7 +144,8 @@ public:
 	void generateDecision();
 	void randomDecision();
 	void eatRandomDecision();
-	void eatByhierarchyDecision();
+	void eatRandomDecisionSafe();
+	void eatByHierarchyDecisionSafe();
 	void intelligentDecision();
 
 	void waitForPieceDecision();
@@ -187,18 +194,21 @@ public:
 	void clear();
 	void createGame();
 	void resetGame();
-	const std::vector< ChessPath* >& getPotentialPaths( const ChessPiece::TYPE );
+	const std::vector< ChessPath* >& getPotentialPaths( const ChessPiece::TYPE ) const;
 	const ChessGameConfig& config() const;
+	const ChessRules* rules() const;
 	static const char* namePiece( const ChessPiece::TYPE );
 	const ChessPlayer* const player( const bool isBlack ) const;
 
 	// Helper methods.
-	void getEatables( const ChessPlayer* player, std::vector< int >&, std::vector< int >& );
-	void getPosiblePositions( std::map< int, std::vector< CellNode > >& possiblePositions, const bool playerBlack, const bool onlyEat );
-	std::vector< CellNode > getPossiblePositionsByPiece( const int indexPiece, const bool playerBlack, const bool onlyEat );
-	std::vector< CellNode > getPawnPosiblePositions( const int indexPiece, const bool playerBlack, const bool onlyEat );
-	std::vector< CellNode > getKnightPossiblePositions( const int indexPiece, const bool playerBlack, const bool onlyEat );
-	std::vector< CellNode > getGenericPossiblePositions( const int indexPiece, const bool playerBlack, const bool onlyEat, const ChessPiece::TYPE type );
+	void getPossibleAssassinsOf( const int indexPiece, std::vector< int >& assassins ) const;
+	void getPossibleVictims( std::vector< int >& victims, const bool isBlack, const bool onlySafe ) const;
+	const bool isPositionSafe( const CellNode& node, const int isBlack ) const;
+	void getPossiblePositions( std::map< int, std::vector< CellNode > >& possiblePositions, const bool isBlack, const bool onlyEat, const bool onlySafe ) const;
+	std::vector< CellNode > getPossiblePositionsByPiece( const int indexPiece, const bool onlyEat, const bool onlySafe ) const;
+	std::vector< CellNode > getPawnPosiblePositions( const int indexPiece, const bool onlyEat, const bool onlySafe ) const;
+	std::vector< CellNode > getKnightPossiblePositions( const int indexPiece, const bool onlyEat, const bool onlySafe ) const;
+	std::vector< CellNode > getGenericPossiblePositions( const int indexPiece, const bool onlyEat, const bool onlySafe, const ChessPiece::TYPE type ) const;
 private:
 	ChessGameConfig m_config;
 	ChessBoard* m_board;
@@ -215,6 +225,12 @@ inline const ChessGameConfig& ChessGame::config() const
 {
 	return m_config;
 }
+
+inline const ChessRules* ChessGame::rules() const
+{
+	return m_rules;
+}
+
 inline const ChessPlayer* const ChessGame::player( const bool isBlack ) const
 {
 	return isBlack ? m_playerB : m_playerW;
