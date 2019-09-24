@@ -14,13 +14,13 @@ private:
 	unsigned int _humanPlayers = 0;
 	bool _infiniteLoop = true;
 	unsigned int _movementTime = 0; // 1000
-	/* AI.
+	/*--------AI--------
 	0: random
 	1: eats (if possible) random
 	2: eats (if possible) random only safe
 	3: eats (if possible) by importance only safe
 	4: intelligent
-	*/
+	------------------*/
 	unsigned int _levelAI = 3;
 	unsigned int _decisionTimeAI = 0;
 public:
@@ -62,6 +62,10 @@ struct CellNode
 	int c;
 	CellNode() { r = 0; c = 0; }
 	CellNode( const int _r, const int _c ) : r( _r ), c( _c ) {}
+	bool operator==( const CellNode& a )
+	{
+		return ( r == a.r ) && ( c == a.c );
+	}
 	CellNode& operator=( const CellNode& a )
 	{
 		r = a.r;
@@ -71,6 +75,10 @@ struct CellNode
 	CellNode operator+( CellNode a )
 	{
 		return { a.r + r, a.c + c };
+	}
+	CellNode operator-( CellNode a )
+	{
+		return { a.r - r, a.c - c };
 	}
 };
 
@@ -209,6 +217,7 @@ public:
 	std::vector< CellNode > getPawnPosiblePositions( const int indexPiece, const bool onlyEat, const bool onlySafe ) const;
 	std::vector< CellNode > getKnightPossiblePositions( const int indexPiece, const bool onlyEat, const bool onlySafe ) const;
 	std::vector< CellNode > getGenericPossiblePositions( const int indexPiece, const bool onlyEat, const bool onlySafe, const ChessPiece::TYPE type ) const;
+	void getBlockingFriends( std::vector< int, CellNode >&, const int indexFriend, const int indexEnemy );
 private:
 	ChessGameConfig m_config;
 	ChessBoard* m_board;

@@ -490,6 +490,31 @@ std::vector< CellNode > ChessGame::getGenericPossiblePositions( const int indexP
 	return ans;
 }
 
+void ChessGame::getBlockingFriends( std::vector< int, CellNode >&, const int indexFriend, const int indexEnemy )
+{
+	assert( m_board->existsPiece( indexFriend ) && m_board->existsPiece( indexEnemy ) );
+	const auto& fpiece = m_board->piece( indexFriend );
+	const auto& epiece = m_board->piece( indexEnemy );
+	CellNode fposition = { fpiece.column(), fpiece.row() };
+	CellNode eposition = { epiece.column(), epiece.row() };
+	CellNode delta = eposition - fposition;
+	if ( delta.c == 0 && std::abs( delta.r ) >= 2 )
+	{
+		delta.r = delta.r / std::abs( delta.r );
+	}
+	if ( delta.r == 0 && std::abs( delta.c ) >= 2 )
+	{
+		delta.c = delta.c / std::abs( delta.c );
+	}
+	if ( ( std::abs( delta.r ) == std::abs( delta.c ) ) && std::abs( delta.r ) > 2 )
+	{
+		delta.r = delta.r / std::abs( delta.r );
+		delta.c = delta.c / std::abs( delta.c );
+	}
+
+	// Iterate over possible cells to see if some friend with less importance can interrupt the path between f and e.
+}
+
 //============================== ChessPlayer ==================================
 
 ChessPlayer::ChessPlayer( ChessBoard* board, ChessGame* game, const bool isBlack ) :
@@ -766,7 +791,6 @@ void ChessPlayer::intelligentDecision()
 
 	bool decisionTaken = false;
 	int indexFriend = -1; // To protect.
-	//int indexEnemy = -1; // It can eat the friend.
 	std::vector< int > possibleAssassins;
 	bool multipleEnemiesForCurrentFriend = false;
 
@@ -780,7 +804,6 @@ void ChessPlayer::intelligentDecision()
 			if ( possiblePositions.size() == 1 )
 			{
 				const auto& pair = *possiblePositions.begin();
-				//indexEnemy = pair.first;
 				const auto& finalPositions = pair.second;
 				if ( finalPositions.size() == 1 )
 				{
@@ -825,7 +848,6 @@ void ChessPlayer::intelligentDecision()
 
 				if ( uniqueFriends.size() == 1 )
 				{
-					//indexEnemy = ( *possiblePositions.begin() ).first;
 					indexFriend = ( *uniqueFriends.begin() );
 					for ( const auto& [key, positions] : possiblePositions )
 					{
@@ -839,27 +861,51 @@ void ChessPlayer::intelligentDecision()
 					m_game->getPossibleAssassinsOf( indexFriend, possibleAssassins );
 					assert( possibleAssassins.size() > 0 );
 					multipleEnemiesForCurrentFriend = ( possibleAssassins.size() != 1 );
-					//indexEnemy = possibleAssassins[0];
 				}
 			}
 
 			/////////
 
-			if ( /*( indexEnemy != -1 )*/( !possibleAssassins.empty() ) && ( indexFriend != -1 ) )
+			bool isThereAHorse = false;
+			if ( ( !possibleAssassins.empty() ) && ( indexFriend != -1 ) )
 			{
 				// Step 1.
 				for ( const auto& ie : possibleAssassins )
 				{
-					std::vector< int > assassins;
-					m_game->getPossibleAssassinsOf( ie, assassins );
+					std::vector< int > myAssassins;
+					m_game->getPossibleAssassinsOf( ie, myAssassins );
 					if ( m_board->existsPiece( ie ) )
 					{
 						const auto& ep = m_board->piece( ie );
+						if ( ep.type() == ChessPiece::KNIGHT )
+						{
+							isThereAHorse = true;
+						}
 						if ( m_game->isPositionSafe( CellNode( ep.row(), ep.column() ), m_isBlack ) )
 						{
-							// EAT.
-							decisionTaken = true;
-							break;
+							if ( myAssassins.empty() )
+							{
+								continue;
+							}
+							m_currentPieceToMoveIndex = myAssassins[0];
+							for ( int i = 0; i < m_possiblePositions[m_currentPieceToMoveIndex].size(); i++ )
+							{
+								auto pos = m_possiblePositions[m_currentPieceToMoveIndex][i];
+								if ( pos == CellNode( ep.row(), ep.column() ) )
+								{
+									m_currentMovementIndex = i;
+									break;
+								}
+							}
+							if ( m_currentMovementIndex != -1 && m_currentPieceToMoveIndex != -1 )
+							{
+								decisionTaken = true;
+								break;
+							}
+							else
+							{
+								m_currentMovementIndex = m_currentPieceToMoveIndex = -1;
+							}
 						}
 					}
 				}
@@ -886,7 +932,15 @@ void ChessPlayer::intelligentDecision()
 				if ( decisionTaken ) return;
 
 				// Step 3.
-				// TODO.
+				if ( !isThereAHorse && ( possibleAssassins.size() == 1 ) )
+				{
+					std::vector< int, CellNode > indexesAndPositions;
+					m_game->getBlockingFriends( indexesAndPositions, indexFriend, possibleAssassins[0] );
+					if ( !indexesAndPositions.empty() )
+					{
+						// TODO.
+					}
+				}
 
 			}
 		}
