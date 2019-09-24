@@ -217,7 +217,8 @@ public:
 	std::vector< CellNode > getPawnPosiblePositions( const int indexPiece, const bool onlyEat, const bool onlySafe ) const;
 	std::vector< CellNode > getKnightPossiblePositions( const int indexPiece, const bool onlyEat, const bool onlySafe ) const;
 	std::vector< CellNode > getGenericPossiblePositions( const int indexPiece, const bool onlyEat, const bool onlySafe, const ChessPiece::TYPE type ) const;
-	void getBlockingFriends( std::vector< int, CellNode >&, const int indexFriend, const int indexEnemy );
+	std::pair< int, CellNode > getBlockingFriend( const int indexFriend, const int indexEnemy );
+	void getFriendsThatCanReach( std::vector< int >& friends, const CellNode& node, const bool isBlack );
 private:
 	ChessGameConfig m_config;
 	ChessBoard* m_board;

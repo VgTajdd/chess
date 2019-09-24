@@ -490,29 +490,64 @@ std::vector< CellNode > ChessGame::getGenericPossiblePositions( const int indexP
 	return ans;
 }
 
-void ChessGame::getBlockingFriends( std::vector< int, CellNode >&, const int indexFriend, const int indexEnemy )
+std::pair< int, CellNode > ChessGame::getBlockingFriend( const int indexFriend, const int indexEnemy )
 {
+	std::pair< int, CellNode > ans( -1, { -1, -1 } );
 	assert( m_board->existsPiece( indexFriend ) && m_board->existsPiece( indexEnemy ) );
 	const auto& fpiece = m_board->piece( indexFriend );
 	const auto& epiece = m_board->piece( indexEnemy );
 	CellNode fposition = { fpiece.column(), fpiece.row() };
 	CellNode eposition = { epiece.column(), epiece.row() };
 	CellNode delta = eposition - fposition;
+	int deltaSize = 0;
 	if ( delta.c == 0 && std::abs( delta.r ) >= 2 )
 	{
 		delta.r = delta.r / std::abs( delta.r );
+		deltaSize = std::abs( delta.r );
 	}
 	if ( delta.r == 0 && std::abs( delta.c ) >= 2 )
 	{
 		delta.c = delta.c / std::abs( delta.c );
+		deltaSize = std::abs( delta.c );
 	}
 	if ( ( std::abs( delta.r ) == std::abs( delta.c ) ) && std::abs( delta.r ) > 2 )
 	{
 		delta.r = delta.r / std::abs( delta.r );
 		delta.c = delta.c / std::abs( delta.c );
+		deltaSize = std::abs( delta.r );
 	}
 
 	// Iterate over possible cells to see if some friend with less importance can interrupt the path between f and e.
+	CellNode testPosition = fposition;
+	std::vector< int > friends;
+	for ( int i = 1; i < deltaSize; i++ )
+	{
+		testPosition = testPosition + delta;
+		getFriendsThatCanReach( friends, testPosition, fpiece.isBlack() );
+	}
+
+	if ( !friends.empty() )
+	{
+		std::vector< std::pair< int, int > > buffer;
+		for ( const int indexFriend : friends )
+		{
+			if ( !m_board->existsPiece( indexFriend ) )
+			{
+				continue;
+			}
+			const auto& piece = m_board->piece( indexFriend );
+			buffer.emplace_back( m_rules->getImportance( piece.type() ), piece.index() );
+		}
+		std::sort( buffer.rbegin(), buffer.rend() );
+
+	}
+
+	return ans;
+}
+
+void ChessGame::getFriendsThatCanReach( std::vector< int >& friends, const CellNode& node, const bool isBlack )
+{
+
 }
 
 //============================== ChessPlayer ==================================
@@ -934,9 +969,8 @@ void ChessPlayer::intelligentDecision()
 				// Step 3.
 				if ( !isThereAHorse && ( possibleAssassins.size() == 1 ) )
 				{
-					std::vector< int, CellNode > indexesAndPositions;
-					m_game->getBlockingFriends( indexesAndPositions, indexFriend, possibleAssassins[0] );
-					if ( !indexesAndPositions.empty() )
+					auto pairIndexPosition = m_game->getBlockingFriend( indexFriend, possibleAssassins[0] );
+					if ( pairIndexPosition.first != -1 )
 					{
 						// TODO.
 					}
