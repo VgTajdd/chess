@@ -568,6 +568,23 @@ void ChessGame::getFriendsThatCanReach( std::vector< int >& friends, const CellN
 	}
 }
 
+const int ChessGame::getIndexKing( const bool isBlack ) const
+{
+	int indexKing = -1;
+	const auto& pieces = m_board->getPieces();
+	for ( const auto&[indexPiece, piece] : pieces )
+	{
+		assert( m_board->existsPiece( indexPiece ) );
+		const auto& piece = m_board->piece( indexPiece );
+		if ( ( piece.isBlack() == isBlack ) || ( piece.type() == ChessPiece::KING ) )
+		{
+			indexKing = -1;
+			break;
+		}
+	}
+	return indexKing;
+}
+
 //============================== ChessPlayer ==================================
 
 ChessPlayer::ChessPlayer( ChessBoard* board, ChessGame* game, const bool isBlack ) :
@@ -1013,6 +1030,79 @@ void ChessPlayer::intelligentDecision()
 	if ( decisionTaken ) return;
 
 	// Make jake.
+	{
+		std::map< int, std::vector< CellNode > > possiblePositions;
+		m_game->getPossiblePositions( possiblePositions, m_isBlack, false, true );
+		for ( const auto&[indexPiece, positions] : possiblePositions )
+		{
+			if ( decisionTaken ) break;
+			assert( m_board->existsPiece( indexPiece ) );
+			const auto& piece = m_board->piece( indexPiece );
+			CellNode currentPosition( piece.row(), piece.column() );
+			if ( piece.type() == ChessPiece::PAWN || piece.type() == ChessPiece::KING )
+			{
+				continue;
+			}
+			for ( const auto& position : positions )
+			{
+				int indexPieceE = -1, rowE = -1, columnE = -1;
+				ChessPiece::TYPE typeE = ChessPiece::NONE;
+				if ( m_board->existsPieceAt( position.r, position.c ) )
+				{
+					const auto& pieceE = m_board->pieceAt( position.r, position.c );
+					indexPieceE = pieceE.index();
+					rowE = pieceE.row();
+					columnE = pieceE.column();
+					typeE = pieceE.type();
+					m_board->removePiece( indexPieceE );
+				}
+
+				// Moving temporally.
+				m_board->movePiece( indexPiece, position.r, position.c );
+
+				std::vector< int > victims;
+				m_game->getPossibleVictims( victims, m_isBlack, false );
+				for ( const int i : victims )
+				{
+					assert( m_board->existsPiece( i ) );
+					assert( m_board->piece( i ).isBlack() != m_isBlack );
+					if ( m_board->piece( i ).type() == ChessPiece::KING )
+					{
+						// Only choose the first one opportunity to make jake.
+						m_currentPieceToMoveIndex = indexPiece;
+						break;
+					}
+				}
+
+				if ( m_currentPieceToMoveIndex != -1 )
+				{
+					for ( int i = 0; i < m_possiblePositions[m_currentPieceToMoveIndex].size(); i++ )
+					{
+						const auto& p = m_possiblePositions[m_currentPieceToMoveIndex][i];
+						if ( p == position )
+						{
+							decisionTaken = true;
+							m_currentMovementIndex = i;
+							break;
+						}
+					}
+					if ( m_currentMovementIndex == -1 )
+					{
+						m_currentPieceToMoveIndex = -1;
+					}
+				}
+
+				// Restoring everything.
+				m_board->movePiece( indexPiece, currentPosition.r, currentPosition.c );
+				if ( indexPieceE != -1 )
+				{
+					m_board->restorePiece( indexPieceE, !m_isBlack, typeE, rowE, columnE );
+				}
+
+				if ( decisionTaken ) break;
+			}
+		}
+	}
 
 	if ( decisionTaken ) return;
 

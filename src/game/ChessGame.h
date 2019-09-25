@@ -219,6 +219,7 @@ public:
 	std::vector< CellNode > getGenericPossiblePositions( const int indexPiece, const bool onlyEat, const bool onlySafe, const ChessPiece::TYPE type ) const;
 	std::pair< int, CellNode > getBlockingFriend( const int indexFriend, const int indexEnemy );
 	void getFriendsThatCanReach( std::vector< int >& friends, const CellNode& node, const bool isBlack );
+	const int getIndexKing( const bool isBlack ) const;
 private:
 	ChessGameConfig m_config;
 	ChessBoard* m_board;
