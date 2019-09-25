@@ -530,10 +530,7 @@ std::pair< int, CellNode > ChessGame::getBlockingFriend( const int indexFriend, 
 			std::vector< std::pair< int, int > > buffer;
 			for ( const int indexHelperFriend : friends )
 			{
-				if ( !m_board->existsPiece( indexHelperFriend ) )
-				{
-					continue;
-				}
+				assert( m_board->existsPiece( indexHelperFriend ) );
 				const auto& piece = m_board->piece( indexHelperFriend );
 				if ( m_rules->getImportance( piece.type() ) < m_rules->getImportance( fpiece.type() ) )
 				{
@@ -813,10 +810,7 @@ void ChessPlayer::eatByHierarchyDecisionSafe()
 		std::vector< std::pair< int, int > > buffer;
 		for ( const int indexVictim : possibleVictims )
 		{
-			if ( !m_board->existsPiece( indexVictim ) )
-			{
-				continue;
-			}
+			assert( m_board->existsPiece( indexVictim ) );
 			const auto& piece = m_board->piece( indexVictim );
 			buffer.emplace_back( m_game->rules()->getImportance( piece.type() ), piece.index() );
 		}
