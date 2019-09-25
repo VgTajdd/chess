@@ -519,35 +519,53 @@ std::pair< int, CellNode > ChessGame::getBlockingFriend( const int indexFriend, 
 
 	// Iterate over possible cells to see if some friend with less importance can interrupt the path between f and e.
 	CellNode testPosition = fposition;
-	std::vector< int > friends;
 	for ( int i = 1; i < deltaSize; i++ )
 	{
+		std::vector< int > friends;
 		testPosition = testPosition + delta;
 		getFriendsThatCanReach( friends, testPosition, fpiece.isBlack() );
-	}
 
-	if ( !friends.empty() )
-	{
-		std::vector< std::pair< int, int > > buffer;
-		for ( const int indexFriend : friends )
+		if ( !friends.empty() )
 		{
-			if ( !m_board->existsPiece( indexFriend ) )
+			std::vector< std::pair< int, int > > buffer;
+			for ( const int indexHelperFriend : friends )
 			{
-				continue;
+				if ( !m_board->existsPiece( indexHelperFriend ) )
+				{
+					continue;
+				}
+				const auto& piece = m_board->piece( indexHelperFriend );
+				if ( m_rules->getImportance( piece.type() ) < m_rules->getImportance( fpiece.type() ) )
+				{
+					buffer.emplace_back( m_rules->getImportance( piece.type() ), indexHelperFriend );
+				}
 			}
-			const auto& piece = m_board->piece( indexFriend );
-			buffer.emplace_back( m_rules->getImportance( piece.type() ), piece.index() );
+			if ( !buffer.empty() )
+			{
+				std::sort( buffer.begin(), buffer.end() );
+				ans = { ( *buffer.begin() ).second, testPosition };
+				break;
+			}
 		}
-		std::sort( buffer.rbegin(), buffer.rend() );
-
 	}
-
 	return ans;
 }
 
 void ChessGame::getFriendsThatCanReach( std::vector< int >& friends, const CellNode& node, const bool isBlack )
 {
-
+	std::map< int, std::vector< CellNode > > possiblePositions;
+	getPossiblePositions( possiblePositions, isBlack, false, false );
+	for ( const auto&[index, positions] : possiblePositions )
+	{
+		for ( const auto& position : positions )
+		{
+			if ( position == node )
+			{
+				friends.push_back( index );
+				break;
+			}
+		}
+	}
 }
 
 //============================== ChessPlayer ==================================
@@ -795,9 +813,9 @@ void ChessPlayer::eatByHierarchyDecisionSafe()
 			const auto& possiblePositions = m_game->getPossiblePositionsByPiece( m_currentPieceToMoveIndex, true, true );
 			for ( int i = 0; i < possiblePositions.size(); i++ )
 			{
-				if ( m_board->existsPieceAt( possiblePositions[i].c, possiblePositions[i].r ) )
+				if ( m_board->existsPieceAt( possiblePositions[i].r, possiblePositions[i].c ) )
 				{
-					const auto& victimPiece = m_board->pieceAt( possiblePositions[i].c, possiblePositions[i].r );
+					const auto& victimPiece = m_board->pieceAt( possiblePositions[i].r, possiblePositions[i].c );
 					if ( victimPiece.index() == m_currentPieceToMoveIndex )
 					{
 						m_currentMovementIndex = i;
@@ -842,9 +860,9 @@ void ChessPlayer::intelligentDecision()
 				const auto& finalPositions = pair.second;
 				if ( finalPositions.size() == 1 )
 				{
-					if ( m_board->existsPieceAt( finalPositions[0].c, finalPositions[0].r ) )
+					if ( m_board->existsPieceAt( finalPositions[0].r, finalPositions[0].c ) )
 					{
-						indexFriend = m_board->pieceAt( finalPositions[0].c, finalPositions[0].r ).index();
+						indexFriend = m_board->pieceAt( finalPositions[0].r, finalPositions[0].c ).index();
 					}
 				}
 				else
@@ -852,9 +870,9 @@ void ChessPlayer::intelligentDecision()
 					std::vector< std::pair< int, int > > bufferFriends;
 					for ( const auto& fp : finalPositions )
 					{
-						if ( m_board->existsPieceAt( finalPositions[0].c, finalPositions[0].r ) )
+						if ( m_board->existsPieceAt( finalPositions[0].r, finalPositions[0].c ) )
 						{
-							const auto& piece = m_board->pieceAt( finalPositions[0].c, finalPositions[0].r );
+							const auto& piece = m_board->pieceAt( finalPositions[0].r, finalPositions[0].c );
 							bufferFriends.emplace_back( m_game->rules()->getImportance( piece.type() ), piece.index() );
 						}
 					}
@@ -870,9 +888,10 @@ void ChessPlayer::intelligentDecision()
 				{
 					for ( const auto& fp : finalPositions )
 					{
-						if ( m_board->existsPieceAt( finalPositions[0].c, finalPositions[0].r ) )
+						if ( m_board->existsPieceAt( finalPositions[0].r, finalPositions[0].c ) )
 						{
-							const auto& piece = m_board->pieceAt( finalPositions[0].c, finalPositions[0].r );
+							const auto& piece = m_board->pieceAt( finalPositions[0].r, finalPositions[0].c );
+							assert( piece.isBlack() == m_isBlack );
 							uniqueFriends.emplace( piece.index() );
 							bufferFriends.emplace_back( m_game->rules()->getImportance( piece.type() ), piece.index() );
 						}
@@ -904,7 +923,7 @@ void ChessPlayer::intelligentDecision()
 			bool isThereAHorse = false;
 			if ( ( !possibleAssassins.empty() ) && ( indexFriend != -1 ) )
 			{
-				// Step 1.
+				// Step 1 - Eat posible assassin.
 				for ( const auto& ie : possibleAssassins )
 				{
 					std::vector< int > myAssassins;
@@ -947,15 +966,16 @@ void ChessPlayer::intelligentDecision()
 
 				if ( decisionTaken ) return;
 
-				// Step 2.
+				// Step 2 - Move to a safe place.
 				const auto& safePositions = m_game->getPossiblePositionsByPiece( indexFriend, false, true );
 				if ( !safePositions.empty() )
 				{
 					for ( int i = 0; i < m_possiblePositions[indexFriend].size(); i++ )
 					{
 						const auto& p = m_possiblePositions[indexFriend][i];
-						if ( p.c == safePositions[0].c && p.r == safePositions[0].r )
+						if ( p.r == safePositions[0].r && p.c == safePositions[0].c )
 						{
+							assert( possibleAssassins.size() > 0 );
 							decisionTaken = true;
 							m_currentPieceToMoveIndex = indexFriend;
 							m_currentMovementIndex = i;
@@ -966,13 +986,23 @@ void ChessPlayer::intelligentDecision()
 
 				if ( decisionTaken ) return;
 
-				// Step 3.
+				// Step 3 - Block enemy movement.
 				if ( !isThereAHorse && ( possibleAssassins.size() == 1 ) )
 				{
 					auto pairIndexPosition = m_game->getBlockingFriend( indexFriend, possibleAssassins[0] );
 					if ( pairIndexPosition.first != -1 )
 					{
-						// TODO.
+						for ( int i = 0; i < m_possiblePositions[pairIndexPosition.first].size(); i++ )
+						{
+							const auto& p = m_possiblePositions[pairIndexPosition.first][i];
+							if ( pairIndexPosition.second == p )
+							{
+								decisionTaken = true;
+								m_currentPieceToMoveIndex = pairIndexPosition.first;
+								m_currentMovementIndex = i;
+								break;
+							}
+						}
 					}
 				}
 

@@ -21,7 +21,7 @@ private:
 	3: eats (if possible) by importance only safe
 	4: intelligent
 	------------------*/
-	unsigned int _levelAI = 3;
+	unsigned int _levelAI = 4;
 	unsigned int _decisionTimeAI = 0;
 public:
 	const unsigned int humanPlayers() const;
@@ -62,7 +62,7 @@ struct CellNode
 	int c;
 	CellNode() { r = 0; c = 0; }
 	CellNode( const int _r, const int _c ) : r( _r ), c( _c ) {}
-	bool operator==( const CellNode& a )
+	bool operator==( const CellNode& a ) const
 	{
 		return ( r == a.r ) && ( c == a.c );
 	}
@@ -72,11 +72,11 @@ struct CellNode
 		c = a.c;
 		return *this;
 	}
-	CellNode operator+( CellNode a )
+	CellNode operator+( CellNode a ) const
 	{
 		return { a.r + r, a.c + c };
 	}
-	CellNode operator-( CellNode a )
+	CellNode operator-( CellNode a ) const
 	{
 		return { a.r - r, a.c - c };
 	}
