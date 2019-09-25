@@ -64,6 +64,15 @@ void ChessBoard::removePiece( const int indexPiece )
 	m_pieces.erase( indexPiece );
 }
 
+void ChessBoard::restorePiece( const int indexPiece, const bool isBlack, const ChessPiece::TYPE type, const int row, const int column )
+{
+	assert( m_pieces.find( indexPiece ) == m_pieces.end() );
+	m_pieces.emplace( indexPiece, ChessPiece( indexPiece, type, isBlack, row, column ) );
+	const int newIndexPosition = ( row * SIZE ) + column;
+	assert( m_positions[newIndexPosition] == -1 );
+	m_positions[newIndexPosition] = indexPiece;
+}
+
 void ChessBoard::movePiece( const int indexPiece, const int row, const int column )
 {
 	const int indexPosition = ( m_pieces.at(indexPiece).row() * SIZE ) + m_pieces.at( indexPiece ).column();
