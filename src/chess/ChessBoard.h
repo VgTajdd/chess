@@ -35,7 +35,7 @@ protected:
 	void clear();
 	void removePiece( const int indexPiece );
 	void restorePiece( const int indexPiece, const bool isBlack, const ChessPiece::TYPE type, const int row, const int column );
-	void movePiece( const int indexPiece, const int row, const int column );
+	void movePieceTo( const int indexPiece, const int row, const int column );
 	void initInDefaultPositions();
 	void createPiece( const ChessPiece::TYPE type, const int indexPosition, const bool isBlack );
 private:
