@@ -116,13 +116,13 @@ void ChessGame::getPossibleAssassinsOf( const int indexPiece, std::vector< int >
 		getPossiblePositions( possiblePositions, !piece.isBlack(), true, false );
 		if ( !possiblePositions.empty() )
 		{
-			for ( const auto&[key, finalPositions] : possiblePositions )
+			for ( const auto&[indexPiece, positions] : possiblePositions )
 			{
-				for ( const auto& fp : finalPositions )
+				for ( const auto& position : positions )
 				{
-					if ( ( piece.column() == finalPositions[0].c ) && ( piece.row() == finalPositions[0].r ) )
+					if ( ( piece.column() == position.c ) && ( piece.row() == position.r ) )
 					{
-						assassins.push_back( key );
+						assassins.push_back( indexPiece );
 						break;
 					}
 				}
@@ -158,15 +158,15 @@ const bool ChessGame::isPositionSafe( const CellNode& node, const int isBlack ) 
 	getPossiblePositions( possiblePositions, !isBlack, true, false );
 	if ( !possiblePositions.empty() )
 	{
-		for ( const auto&[indexPiece, finalPositions] : possiblePositions )
+		for ( const auto&[indexPiece, positions] : possiblePositions )
 		{
 			if ( !isSafe )
 			{
 				break;
 			}
-			for ( const auto& fp : finalPositions )
+			for ( const auto& position : positions )
 			{
-				if ( ( node.c == finalPositions[0].c ) && ( node.r == finalPositions[0].r ) )
+				if ( node == position )
 				{
 					isSafe = false;
 					break;
@@ -183,8 +183,9 @@ const bool ChessGame::isPositionSafe( const CellNode& node, const int isBlack ) 
 void ChessGame::getPossiblePositions( std::map< int, std::vector< CellNode > >& possiblePositions, const bool isBlack, const bool onlyEat, const bool onlySafe ) const
 {
 	const auto& pieces = m_board->getPieces();
-	for ( const auto&[key, piece] : pieces )
+	for ( const auto&[indexPiece, piece] : pieces )
 	{
+		assert( piece.index() == indexPiece );
 		if ( ( piece.isBlack() && isBlack ) || ( !piece.isBlack() && !isBlack ) )
 		{
 			std::vector< CellNode > v = getPossiblePositionsByPiece( piece.index(), onlyEat, onlySafe );
@@ -259,7 +260,7 @@ std::vector< CellNode > ChessGame::getPawnPosiblePositions( const int indexPiece
 			int rr = piece.relRow() + node.r;
 			int rc = piece.relColumn() + node.c;
 
-			bool isInside = false, noFriend = false, isEmpty = false;
+			bool isInside = false, isBlack = false, isEmpty = false;
 
 			// Check if cell is inside the board.
 			int ar = piece.isBlack() ? ChessBoard::SIZE - rr - 1 : rr;
@@ -269,64 +270,46 @@ std::vector< CellNode > ChessGame::getPawnPosiblePositions( const int indexPiece
 			// Check if piece is friend.
 			if ( isInside )
 			{
-				if ( m_board->existsPieceAt( ar, ac ) )
+				CellNode node( ar, ac );
+				bool validNode = false;
+				getCellState( node, isEmpty, isBlack );
+				if ( onlyEat )
 				{
-					const auto& otherPiece = m_board->pieceAt( ar, ac );
-					noFriend = ( otherPiece.isBlack() != piece.isBlack() );
-				}
-				else
-				{
-					isEmpty = true;
-				}
-			}
-			if ( onlyEat )
-			{
-				if ( isDiagonal )
-				{
-					if ( isInside && noFriend )
+					if ( isDiagonal )
 					{
-						CellNode node( ar, ac );
-						if ( onlySafe )
+						if ( !isEmpty && ( isBlack != piece.isBlack() ) )
 						{
-							if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
-						}
-						else
-						{
-							ans.push_back( node );
-						}
-					}
-				}
-			}
-			else
-			{
-				if ( isDiagonal )
-				{
-					if ( isInside && noFriend )
-					{
-						CellNode node( ar, ac );
-						if ( onlySafe )
-						{
-							if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
-						}
-						else
-						{
-							ans.push_back( node );
+							validNode = true;
 						}
 					}
 				}
 				else
 				{
-					if ( isInside && ( noFriend || isEmpty ) )
+					if ( isDiagonal )
 					{
-						CellNode node( ar, ac );
-						if ( onlySafe )
+						if ( !isEmpty && ( isBlack != piece.isBlack() ) )
 						{
-							if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
+							validNode = true;
 						}
-						else
+					}
+					else
+					{
+						if ( !isEmpty )
 						{
-							ans.push_back( node );
+							break;
 						}
+						validNode = true;
+					}
+				}
+				if ( validNode )
+				{
+					if ( onlySafe )
+					{
+						if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
+					}
+					else
+					{
+						ans.push_back( node );
 					}
 				}
 			}
@@ -351,7 +334,7 @@ std::vector< CellNode > ChessGame::getKnightPossiblePositions( const int indexPi
 		int rr = piece.relRow() + node.r;
 		int rc = piece.relColumn() + node.c;
 
-		bool isInside = false, noFriend = false, isEmpty = false;
+		bool isInside = false, isBlack = false, isEmpty = false;
 
 		// Check if cell is inside the board.
 		int ar = piece.isBlack() ? ChessBoard::SIZE - rr - 1 : rr;
@@ -361,37 +344,25 @@ std::vector< CellNode > ChessGame::getKnightPossiblePositions( const int indexPi
 		// Check if piece is friend.
 		if ( isInside )
 		{
-			if ( m_board->existsPieceAt( ar, ac ) )
+			CellNode node( ar, ac );
+			getCellState( node, isEmpty, isBlack );
+			bool validNode = false;
+			if ( onlyEat )
 			{
-				const auto& otherPiece = m_board->pieceAt( ar, ac );
-				noFriend = ( otherPiece.isBlack() != piece.isBlack() );
+				if ( !isEmpty && ( isBlack != piece.isBlack() ) )
+				{
+					validNode = true;
+				}
 			}
 			else
 			{
-				isEmpty = true;
-			}
-		}
-
-		if ( onlyEat )
-		{
-			if ( isInside && noFriend )
-			{
-				CellNode node( ar, ac );
-				if ( onlySafe )
+				if ( ( !isEmpty && ( isBlack != piece.isBlack() ) ) || ( isEmpty ) )
 				{
-					if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
-				}
-				else
-				{
-					ans.push_back( node );
+					validNode = true;
 				}
 			}
-		}
-		else
-		{
-			if ( isInside && ( noFriend || isEmpty ) )
+			if ( validNode )
 			{
-				CellNode node( ar, ac );
 				if ( onlySafe )
 				{
 					if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
@@ -403,7 +374,6 @@ std::vector< CellNode > ChessGame::getKnightPossiblePositions( const int indexPi
 			}
 		}
 	}
-
 	return ans;
 }
 
@@ -424,7 +394,7 @@ std::vector< CellNode > ChessGame::getGenericPossiblePositions( const int indexP
 			int rr = piece.relRow() + node.r;
 			int rc = piece.relColumn() + node.c;
 
-			bool isInside = false, noFriend = false, isEmpty = false;
+			bool isInside = false, isBlack = false, isEmpty = false;
 
 			// Check if cell is inside the board.
 			int ar = piece.isBlack() ? ChessBoard::SIZE - rr - 1 : rr;
@@ -434,23 +404,17 @@ std::vector< CellNode > ChessGame::getGenericPossiblePositions( const int indexP
 			// Check if piece is friend.
 			if ( isInside )
 			{
-				if ( m_board->existsPieceAt( ar, ac ) )
+				CellNode node( ar, ac );
+				getCellState( node, isEmpty, isBlack );
+
+				if ( onlyEat )
 				{
-					const auto& otherPiece = m_board->pieceAt( ar, ac );
-					noFriend = ( otherPiece.isBlack() != piece.isBlack() );
-				}
-				else
-				{
-					isEmpty = true;
-				}
-			}
-			if ( onlyEat )
-			{
-				if ( isInside && ( noFriend || isEmpty ) )
-				{
-					if ( noFriend )
+					if ( !isEmpty && ( isBlack == piece.isBlack() ) )
 					{
-						CellNode node( ar, ac );
+						break;
+					}
+					if ( !isEmpty )
+					{
 						if ( onlySafe )
 						{
 							if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
@@ -459,18 +423,19 @@ std::vector< CellNode > ChessGame::getGenericPossiblePositions( const int indexP
 						{
 							ans.push_back( node );
 						}
+						break;
+					}
+					if ( !isEmpty  )
+					{
+						break;
 					}
 				}
 				else
 				{
-					break;
-				}
-			}
-			else
-			{
-				if ( isInside && ( noFriend || isEmpty ) )
-				{
-					CellNode node( ar, ac );
+					if ( !isEmpty && ( isBlack == piece.isBlack() ) )
+					{
+						break;
+					}
 					if ( onlySafe )
 					{
 						if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
@@ -479,10 +444,10 @@ std::vector< CellNode > ChessGame::getGenericPossiblePositions( const int indexP
 					{
 						ans.push_back( node );
 					}
-				}
-				else
-				{
-					break;
+					if ( !isEmpty  )
+					{
+						break;
+					}
 				}
 			}
 		}
@@ -582,6 +547,20 @@ const int ChessGame::getIndexKing( const bool isBlack ) const
 	return indexKing;
 }
 
+void ChessGame::getCellState( const CellNode& node, bool& isEmpy, bool& isBlack ) const
+{
+	if ( m_board->existsPieceAt( node.r, node.c ) )
+	{
+		isEmpy = false;
+		const auto& piece = m_board->pieceAt( node.r, node.c );
+		isBlack = piece.isBlack();
+	}
+	else
+	{
+		isEmpy = true;
+	}
+}
+
 //============================== ChessPlayer ==================================
 
 ChessPlayer::ChessPlayer( ChessBoard* board, ChessGame* game, const bool isBlack ) :
@@ -669,8 +648,9 @@ void ChessPlayer::evaluateFinalPosition()
 		}
 	}
 
-	std::string msg = name() + std::string( " => move " ) + m_game->namePiece( m_board->piece( m_currentPieceToMoveIndex ).type() ) + eatMsg;
+	std::string msg = "| " + m_preMessage + " | " + name() + std::string( " => move " ) + m_game->namePiece( m_board->piece( m_currentPieceToMoveIndex ).type() ) + eatMsg;
 	std::cout << msg << std::endl;
+	m_preMessage.clear();
 
 	// Save double step if pawn.
 	if ( m_board->piece( m_currentPieceToMoveIndex ).type() == ChessPiece::PAWN )
@@ -682,7 +662,7 @@ void ChessPlayer::evaluateFinalPosition()
 	}
 
 	// Make the movement.
-	m_board->movePiece( m_currentPieceToMoveIndex, finalPosition.r, finalPosition.c );
+	m_board->movePieceTo( m_currentPieceToMoveIndex, finalPosition.r, finalPosition.c );
 
 	if ( getState() != ChessPlayer::ST_WIN )
 	{
@@ -868,6 +848,7 @@ void ChessPlayer::intelligentDecision()
 			if ( possiblePositions.size() == 1 )
 			{
 				const auto& pair = *possiblePositions.begin();
+				possibleAssassins.push_back( pair.first );
 				const auto& finalPositions = pair.second;
 				if ( finalPositions.size() == 1 )
 				{
@@ -881,9 +862,9 @@ void ChessPlayer::intelligentDecision()
 					std::vector< std::pair< int, int > > bufferFriends;
 					for ( const auto& fp : finalPositions )
 					{
-						if ( m_board->existsPieceAt( finalPositions[0].r, finalPositions[0].c ) )
+						if ( m_board->existsPieceAt( fp.r, fp.c ) )
 						{
-							const auto& piece = m_board->pieceAt( finalPositions[0].r, finalPositions[0].c );
+							const auto& piece = m_board->pieceAt( fp.r, fp.c );
 							bufferFriends.emplace_back( m_game->rules()->getImportance( piece.type() ), piece.index() );
 						}
 					}
@@ -899,9 +880,9 @@ void ChessPlayer::intelligentDecision()
 				{
 					for ( const auto& fp : finalPositions )
 					{
-						if ( m_board->existsPieceAt( finalPositions[0].r, finalPositions[0].c ) )
+						if ( m_board->existsPieceAt( fp.r, fp.c ) )
 						{
-							const auto& piece = m_board->pieceAt( finalPositions[0].r, finalPositions[0].c );
+							const auto& piece = m_board->pieceAt( fp.r, fp.c );
 							assert( piece.isBlack() == m_isBlack );
 							uniqueFriends.emplace( piece.index() );
 							bufferFriends.emplace_back( m_game->rules()->getImportance( piece.type() ), piece.index() );
@@ -914,9 +895,9 @@ void ChessPlayer::intelligentDecision()
 				if ( uniqueFriends.size() == 1 )
 				{
 					indexFriend = ( *uniqueFriends.begin() );
-					for ( const auto& [key, positions] : possiblePositions )
+					for ( const auto& [indexAssassin, positions] : possiblePositions )
 					{
-						possibleAssassins.push_back( key );
+						possibleAssassins.push_back( indexAssassin );
 					}
 					multipleEnemiesForCurrentFriend = true;
 				}
@@ -964,6 +945,7 @@ void ChessPlayer::intelligentDecision()
 							}
 							if ( m_currentMovementIndex != -1 && m_currentPieceToMoveIndex != -1 )
 							{
+								m_preMessage = "Eat posible assassin";
 								decisionTaken = true;
 								break;
 							}
@@ -984,8 +966,9 @@ void ChessPlayer::intelligentDecision()
 					for ( int i = 0; i < m_possiblePositions[indexFriend].size(); i++ )
 					{
 						const auto& p = m_possiblePositions[indexFriend][i];
-						if ( p.r == safePositions[0].r && p.c == safePositions[0].c )
+						if ( p == safePositions[0] )
 						{
+							m_preMessage = "Move to a safe place";
 							assert( possibleAssassins.size() > 0 );
 							decisionTaken = true;
 							m_currentPieceToMoveIndex = indexFriend;
@@ -1008,6 +991,7 @@ void ChessPlayer::intelligentDecision()
 							const auto& p = m_possiblePositions[pairIndexPosition.first][i];
 							if ( pairIndexPosition.second == p )
 							{
+								m_preMessage = "Block enemy movement";
 								decisionTaken = true;
 								m_currentPieceToMoveIndex = pairIndexPosition.first;
 								m_currentMovementIndex = i;
@@ -1032,18 +1016,20 @@ void ChessPlayer::intelligentDecision()
 			if ( decisionTaken ) break;
 			assert( m_board->existsPiece( indexPiece ) );
 			const auto& piece = m_board->piece( indexPiece );
-			CellNode currentPosition( piece.row(), piece.column() );
 			if ( piece.type() == ChessPiece::PAWN || piece.type() == ChessPiece::KING )
 			{
 				continue;
 			}
+			CellNode currentPosition( piece.row(), piece.column() );
 			for ( const auto& position : positions )
 			{
+				assert( m_game->isPositionSafe( position, m_isBlack ) );
 				int indexPieceE = -1, rowE = -1, columnE = -1;
 				ChessPiece::TYPE typeE = ChessPiece::NONE;
 				if ( m_board->existsPieceAt( position.r, position.c ) )
 				{
 					const auto& pieceE = m_board->pieceAt( position.r, position.c );
+					assert( pieceE.isBlack() != m_isBlack );
 					indexPieceE = pieceE.index();
 					rowE = pieceE.row();
 					columnE = pieceE.column();
@@ -1052,15 +1038,17 @@ void ChessPlayer::intelligentDecision()
 				}
 
 				// Moving temporally.
-				m_board->movePiece( indexPiece, position.r, position.c );
+				m_board->movePieceTo( indexPiece, position.r, position.c );
 
 				std::vector< int > victims;
 				m_game->getPossibleVictims( victims, m_isBlack, false );
 				for ( const int i : victims )
 				{
 					assert( m_board->existsPiece( i ) );
-					assert( m_board->piece( i ).isBlack() != m_isBlack );
-					if ( m_board->piece( i ).type() == ChessPiece::KING )
+					const auto& victimPiece = m_board->piece( i );
+					assert( victimPiece.isBlack() != m_isBlack );
+					assert( m_game->isPositionSafe( CellNode( victimPiece.row(), victimPiece.column() ), m_isBlack ) );
+					if ( victimPiece.type() == ChessPiece::KING )
 					{
 						// Only choose the first one opportunity to make jake.
 						m_currentPieceToMoveIndex = indexPiece;
@@ -1077,6 +1065,7 @@ void ChessPlayer::intelligentDecision()
 						{
 							decisionTaken = true;
 							m_currentMovementIndex = i;
+							m_preMessage = "JAKE!";
 							break;
 						}
 					}
@@ -1087,7 +1076,7 @@ void ChessPlayer::intelligentDecision()
 				}
 
 				// Restoring everything.
-				m_board->movePiece( indexPiece, currentPosition.r, currentPosition.c );
+				m_board->movePieceTo( indexPiece, currentPosition.r, currentPosition.c );
 				if ( indexPieceE != -1 )
 				{
 					m_board->restorePiece( indexPieceE, !m_isBlack, typeE, rowE, columnE );
@@ -1101,12 +1090,57 @@ void ChessPlayer::intelligentDecision()
 	if ( decisionTaken ) return;
 
 	// Make jake mate.
+	{
+		std::vector< int > victims;
+		m_game->getPossibleVictims( victims, m_isBlack, false );
+		int enemyKingIndex = -1;
+		CellNode enemyKingPosition;
+		bool jakeMatePossible = false;
+		for ( const int i : victims )
+		{
+			assert( m_board->existsPiece( i ) );
+			assert( m_board->piece( i ).isBlack() != m_isBlack );
+			if ( m_board->piece( i ).type() == ChessPiece::KING )
+			{
+				// Only choose the first one opportunity to make jake.
+				jakeMatePossible = true;
+				const auto& enemyKing = m_board->piece( i );
+				enemyKingPosition = CellNode( enemyKing.row(), enemyKing.column() );
+				enemyKingIndex = i;
+				break;
+			}
+		}
+
+		if ( jakeMatePossible )
+		{
+			for ( const auto&[indexPiece, positions] : m_possiblePositions )
+			{
+				if ( decisionTaken )
+				{
+					break;
+				}
+				for ( int i = 0; i < positions.size(); i++ )
+				{
+					if ( positions[i] == enemyKingPosition )
+					{
+						m_currentPieceToMoveIndex = indexPiece;
+						m_currentMovementIndex = i;
+						decisionTaken = true;
+						m_preMessage = "JAKE MATE!";
+						break;
+					}
+				}
+			}
+		}
+	}
 
 	if ( decisionTaken ) return;
 
 	// Eat enemy.
 
 	if ( decisionTaken ) return;
+
+	m_preMessage = "Random decision";
 
 	// Move randomly.
 	chooseRandomPieceToMove();

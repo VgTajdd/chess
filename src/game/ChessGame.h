@@ -180,6 +180,7 @@ private:
 	int m_currentPieceToMoveIndex;
 	int m_currentMovementIndex;
 	unsigned int m_timerPieceInMovement;
+	std::string m_preMessage;
 };
 
 inline const std::vector< int >& ChessPlayer::pawnsUsedDoubleStep() const
@@ -220,6 +221,7 @@ public:
 	std::pair< int, CellNode > getBlockingFriend( const int indexFriend, const int indexEnemy );
 	void getFriendsThatCanReach( std::vector< int >& friends, const CellNode& node, const bool isBlack );
 	const int getIndexKing( const bool isBlack ) const;
+	void getCellState( const CellNode& node, bool& isEmpy, bool& isBlack ) const;
 private:
 	ChessGameConfig m_config;
 	ChessBoard* m_board;
