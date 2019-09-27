@@ -106,19 +106,20 @@ const char* ChessGame::namePiece( const ChessPiece::TYPE type )
 
 // Helper methods.
 
-void ChessGame::getPossibleAssassinsOf( const int indexPiece, std::vector< int >& assassins ) const
+void ChessGame::getPossibleAssassinsOf( const int indexPieceVictim, std::vector< int >& assassins ) const
 {
-	assert( m_board->existsPiece( indexPiece ) );
-	const auto& piece = m_board->piece( indexPiece );
+	assert( m_board->existsPiece( indexPieceVictim ) );
+	const auto& victimPiece = m_board->piece( indexPieceVictim );
 	std::map< int, std::vector< CellNode > > possiblePositions;
-	getPossiblePositions( possiblePositions, !piece.isBlack(), true, false );
+	getPossiblePositions( possiblePositions, !victimPiece.isBlack(), true, false );
 	if ( !possiblePositions.empty() )
 	{
 		for ( const auto&[indexPiece, positions] : possiblePositions )
 		{
 			for ( const auto& position : positions )
 			{
-				if ( ( piece.column() == position.c ) && ( piece.row() == position.r ) )
+				CellNode node( victimPiece.row(), victimPiece.column() );
+				if ( node == position )
 				{
 					assassins.push_back( indexPiece );
 					break;
@@ -132,24 +133,48 @@ void ChessGame::getPossibleVictims( std::vector< int >& victims, const bool isBl
 {
 	std::map< int, std::vector< CellNode > > possiblePositions;
 	getPossiblePositions( possiblePositions, isBlack, true, onlySafe );
-	for ( const auto& [indexPiece, positions] : possiblePositions )
+	for ( const auto&[indexPiece, positions] : possiblePositions )
 	{
 		for ( const auto& position : positions )
 		{
 			if ( m_board->existsPieceAt( position.r, position.c ) )
 			{
-				assert( m_board->pieceAt( position.r, position.c ).isBlack() != isBlack );
-				victims.push_back( m_board->pieceAt( position.r, position.c ).index() );
+				const auto& victimPiece = m_board->pieceAt( position.r, position.c );
+				assert( victimPiece.isBlack() != isBlack );
+				CellNode node( victimPiece.row(), victimPiece.column() );
+				victims.push_back( victimPiece.index() );
 			}
 		}
 	}
 }
 
-const bool ChessGame::isPositionSafe( const CellNode& node, const int isBlack ) const
+const bool ChessGame::isSafeToMoveTo( const int indexPiece, const CellNode& node ) const
 {
+	assert( m_board->existsPiece( indexPiece ) );
+	const auto& piece = m_board->piece( indexPiece );
+	CellNode currentPosition( piece.row(), piece.column() );
+
+	int indexPieceE = -1, rowE = -1, columnE = -1;
+	ChessPiece::TYPE typeE = ChessPiece::NONE;
+	if ( m_board->existsPieceAt( node.r, node.c ) )
+	{
+		const auto& pieceE = m_board->pieceAt( node.r, node.c );
+		if ( pieceE.isBlack() != piece.isBlack() )
+		{
+			indexPieceE = pieceE.index();
+			rowE = pieceE.row();
+			columnE = pieceE.column();
+			typeE = pieceE.type();
+			m_board->removePiece( indexPieceE );
+		}
+	}
+
+	// Moving temporally.
+	m_board->movePieceTo( indexPiece, node.r, node.c );
+
 	bool isSafe = true;
 	std::map< int, std::vector< CellNode > > possiblePositions;
-	getPossiblePositions( possiblePositions, !isBlack, false, false );
+	getPossiblePositions( possiblePositions, !piece.isBlack(), false, false );
 	if ( !possiblePositions.empty() )
 	{
 		for ( const auto&[indexPiece, positions] : possiblePositions )
@@ -168,6 +193,14 @@ const bool ChessGame::isPositionSafe( const CellNode& node, const int isBlack ) 
 			}
 		}
 	}
+
+	// Restoring everything.
+	m_board->movePieceTo( indexPiece, currentPosition.r, currentPosition.c );
+	if ( indexPieceE != -1 )
+	{
+		m_board->restorePiece( indexPieceE, !piece.isBlack(), typeE, rowE, columnE );
+	}
+
 	return isSafe;
 }
 
@@ -299,7 +332,8 @@ std::vector< CellNode > ChessGame::getPawnPosiblePositions( const int indexPiece
 				{
 					if ( onlySafe )
 					{
-						if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
+						//if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
+						if ( isSafeToMoveTo( piece.index(), node ) ) ans.push_back( node );
 					}
 					else
 					{
@@ -359,7 +393,8 @@ std::vector< CellNode > ChessGame::getKnightPossiblePositions( const int indexPi
 			{
 				if ( onlySafe )
 				{
-					if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
+					//if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
+					if ( isSafeToMoveTo( piece.index(), node ) ) ans.push_back( node );
 				}
 				else
 				{
@@ -401,17 +436,19 @@ std::vector< CellNode > ChessGame::getGenericPossiblePositions( const int indexP
 				CellNode node( ar, ac );
 				getCellState( node, isEmpty, isBlack );
 
+				if ( !isEmpty && ( isBlack == piece.isBlack() ) )
+				{
+					break;
+				}
+
 				if ( onlyEat )
 				{
-					if ( !isEmpty && ( isBlack == piece.isBlack() ) )
-					{
-						break;
-					}
 					if ( !isEmpty )
 					{
 						if ( onlySafe )
 						{
-							if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
+							//if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
+							if ( isSafeToMoveTo( piece.index(), node ) ) ans.push_back( node );
 						}
 						else
 						{
@@ -419,20 +456,13 @@ std::vector< CellNode > ChessGame::getGenericPossiblePositions( const int indexP
 						}
 						break;
 					}
-					if ( !isEmpty  )
-					{
-						break;
-					}
 				}
 				else
 				{
-					if ( !isEmpty && ( isBlack == piece.isBlack() ) )
-					{
-						break;
-					}
 					if ( onlySafe )
 					{
-						if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
+						//if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
+						if ( isSafeToMoveTo( piece.index(), node ) ) ans.push_back( node );
 					}
 					else
 					{

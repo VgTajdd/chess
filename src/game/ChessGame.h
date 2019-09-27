@@ -149,7 +149,7 @@ public:
 	// Helper methods.
 	void getPossibleAssassinsOf( const int indexPiece, std::vector< int >& assassins ) const;
 	void getPossibleVictims( std::vector< int >& victims, const bool isBlack, const bool onlySafe ) const;
-	const bool isPositionSafe( const CellNode& node, const int isBlack ) const;
+	const bool isSafeToMoveTo( const int indexPiece, const CellNode& node ) const;
 	void getPossiblePositions( std::map< int, std::vector< CellNode > >& possiblePositions, const bool isBlack, const bool onlyEat, const bool onlySafe ) const;
 	std::vector< CellNode > getPossiblePositionsByPiece( const int indexPiece, const bool onlyEat, const bool onlySafe ) const;
 	std::vector< CellNode > getPawnPosiblePositions( const int indexPiece, const bool onlyEat, const bool onlySafe ) const;
