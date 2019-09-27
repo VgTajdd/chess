@@ -33,6 +33,9 @@
     <ClCompile Include="..\..\..\game\ChessGame.cpp">
       <Filter>Source Files\game</Filter>
     </ClCompile>
+    <ClCompile Include="..\..\..\game\ChessPlayer.cpp">
+      <Filter>Source Files\game</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\..\chess\BaseItem.h">
@@ -45,6 +48,9 @@
       <Filter>Source Files\chess</Filter>
     </ClInclude>
     <ClInclude Include="..\..\..\game\ChessGame.h">
+      <Filter>Source Files\game</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\..\game\ChessPlayer.h">
       <Filter>Source Files\game</Filter>
     </ClInclude>
   </ItemGroup>
