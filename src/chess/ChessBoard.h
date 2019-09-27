@@ -4,10 +4,12 @@
 #include <map>
 
 class ChessPlayer;
+class ChessGame;
 
 class ChessBoard
 {
 friend class ChessPlayer;
+friend class ChessGame;
 public:
 	const static int SIZE = 8;
 	const static int CELLS_COUNT = 64;
