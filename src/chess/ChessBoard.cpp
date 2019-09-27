@@ -79,6 +79,7 @@ void ChessBoard::movePieceTo( const int indexPiece, const int row, const int col
 {
 	const int indexPosition = ( m_pieces.at( indexPiece ).row() * SIZE ) + m_pieces.at( indexPiece ).column();
 	assert( m_positions[indexPosition] != -1 );
+	assert( m_positions[indexPosition] == indexPiece );
 	m_positions[indexPosition] = -1;
 	m_pieces.at( indexPiece ).setPosition( row, column );
 	const int newIndexPosition = ( row * SIZE ) + column;
