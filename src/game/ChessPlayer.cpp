@@ -364,41 +364,50 @@ void ChessPlayer::intelligentDecision()
 				{
 					std::vector< int > myAssassins;
 					m_game->getPossibleAssassinsOf( ie, myAssassins );
-					if ( m_board->existsPiece( ie ) )
+					assert( m_board->existsPiece( ie ) );
+
+					const auto& ep = m_board->piece( ie );
+					CellNode enemyPosition( ep.row(), ep.column() );
+					if ( ep.type() == ChessPiece::KNIGHT )
 					{
-						const auto& ep = m_board->piece( ie );
-						if ( ep.type() == ChessPiece::KNIGHT )
+						isThereAHorse = true;
+					}
+
+					if ( myAssassins.empty() )
+					{
+						continue;
+					}
+
+					for ( const int myAssassin : myAssassins )
+					{
+						if ( !m_game->isSafeToMoveTo( myAssassin, enemyPosition ) )
 						{
-							isThereAHorse = true;
+							continue;
 						}
-						if ( m_game->isPositionSafe( CellNode( ep.row(), ep.column() ), m_isBlack ) )
+
+						m_currentPieceToMoveIndex = myAssassin;
+						for ( int i = 0; i < m_possiblePositions[m_currentPieceToMoveIndex].size(); i++ )
 						{
-							if ( myAssassins.empty() )
+							CellNode pos = m_possiblePositions[m_currentPieceToMoveIndex][i];
+							if ( pos == enemyPosition )
 							{
-								continue;
-							}
-							m_currentPieceToMoveIndex = myAssassins[0];
-							for ( int i = 0; i < m_possiblePositions[m_currentPieceToMoveIndex].size(); i++ )
-							{
-								auto pos = m_possiblePositions[m_currentPieceToMoveIndex][i];
-								if ( pos == CellNode( ep.row(), ep.column() ) )
-								{
-									m_currentMovementIndex = i;
-									break;
-								}
-							}
-							if ( m_currentMovementIndex != -1 && m_currentPieceToMoveIndex != -1 )
-							{
-								m_preMessage = "Eat posible assassin";
-								decisionTaken = true;
+								m_currentMovementIndex = i;
 								break;
 							}
-							else
-							{
-								m_currentMovementIndex = m_currentPieceToMoveIndex = -1;
-							}
+						}
+						if ( m_currentMovementIndex != -1 && m_currentPieceToMoveIndex != -1 )
+						{
+							m_preMessage = "Eat posible assassin";
+							decisionTaken = true;
+							break;
+						}
+						else
+						{
+							m_currentMovementIndex = m_currentPieceToMoveIndex = -1;
 						}
 					}
+
+					if ( decisionTaken ) break;
 				}
 
 				if ( decisionTaken ) return;
@@ -467,7 +476,6 @@ void ChessPlayer::intelligentDecision()
 			CellNode currentPosition( piece.row(), piece.column() );
 			for ( const auto& position : positions )
 			{
-				assert( m_game->isPositionSafe( position, m_isBlack ) );
 				int indexPieceE = -1, rowE = -1, columnE = -1;
 				ChessPiece::TYPE typeE = ChessPiece::NONE;
 				if ( m_board->existsPieceAt( position.r, position.c ) )
@@ -491,7 +499,6 @@ void ChessPlayer::intelligentDecision()
 					assert( m_board->existsPiece( i ) );
 					const auto& victimPiece = m_board->piece( i );
 					assert( victimPiece.isBlack() != m_isBlack );
-					assert( m_game->isPositionSafe( CellNode( victimPiece.row(), victimPiece.column() ), m_isBlack ) );
 					if ( victimPiece.type() == ChessPiece::KING )
 					{
 						// Only choose the first one opportunity to make jake.

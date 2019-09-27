@@ -332,7 +332,6 @@ std::vector< CellNode > ChessGame::getPawnPosiblePositions( const int indexPiece
 				{
 					if ( onlySafe )
 					{
-						//if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
 						if ( isSafeToMoveTo( piece.index(), node ) ) ans.push_back( node );
 					}
 					else
@@ -393,7 +392,6 @@ std::vector< CellNode > ChessGame::getKnightPossiblePositions( const int indexPi
 			{
 				if ( onlySafe )
 				{
-					//if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
 					if ( isSafeToMoveTo( piece.index(), node ) ) ans.push_back( node );
 				}
 				else
@@ -447,7 +445,6 @@ std::vector< CellNode > ChessGame::getGenericPossiblePositions( const int indexP
 					{
 						if ( onlySafe )
 						{
-							//if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
 							if ( isSafeToMoveTo( piece.index(), node ) ) ans.push_back( node );
 						}
 						else
@@ -461,7 +458,6 @@ std::vector< CellNode > ChessGame::getGenericPossiblePositions( const int indexP
 				{
 					if ( onlySafe )
 					{
-						//if ( isPositionSafe( node, piece.isBlack() ) ) ans.push_back( node );
 						if ( isSafeToMoveTo( piece.index(), node ) ) ans.push_back( node );
 					}
 					else
