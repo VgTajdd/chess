@@ -109,29 +109,23 @@ const char* ChessGame::namePiece( const ChessPiece::TYPE type )
 
 void ChessGame::getPossibleAssassinsOf( const int indexPiece, std::vector< int >& assassins ) const
 {
-	if ( m_board->existsPiece( indexPiece ) )
+	assert( m_board->existsPiece( indexPiece ) );
+	const auto& piece = m_board->piece( indexPiece );
+	std::map< int, std::vector< CellNode > > possiblePositions;
+	getPossiblePositions( possiblePositions, !piece.isBlack(), true, false );
+	if ( !possiblePositions.empty() )
 	{
-		const auto& piece = m_board->piece( indexPiece );
-		std::map< int, std::vector< CellNode > > possiblePositions;
-		getPossiblePositions( possiblePositions, !piece.isBlack(), true, false );
-		if ( !possiblePositions.empty() )
+		for ( const auto&[indexPiece, positions] : possiblePositions )
 		{
-			for ( const auto&[indexPiece, positions] : possiblePositions )
+			for ( const auto& position : positions )
 			{
-				for ( const auto& position : positions )
+				if ( ( piece.column() == position.c ) && ( piece.row() == position.r ) )
 				{
-					if ( ( piece.column() == position.c ) && ( piece.row() == position.r ) )
-					{
-						assassins.push_back( indexPiece );
-						break;
-					}
+					assassins.push_back( indexPiece );
+					break;
 				}
 			}
 		}
-	}
-	else
-	{
-		std::cout << "Piece doesn´t exist" << std::endl;
 	}
 }
 
@@ -145,6 +139,7 @@ void ChessGame::getPossibleVictims( std::vector< int >& victims, const bool isBl
 		{
 			if ( m_board->existsPieceAt( position.r, position.c ) )
 			{
+				assert( m_board->pieceAt( position.r, position.c ).isBlack() != isBlack );
 				victims.push_back( m_board->pieceAt( position.r, position.c ).index() );
 			}
 		}
@@ -155,7 +150,7 @@ const bool ChessGame::isPositionSafe( const CellNode& node, const int isBlack ) 
 {
 	bool isSafe = true;
 	std::map< int, std::vector< CellNode > > possiblePositions;
-	getPossiblePositions( possiblePositions, !isBlack, true, false );
+	getPossiblePositions( possiblePositions, !isBlack, false, false );
 	if ( !possiblePositions.empty() )
 	{
 		for ( const auto&[indexPiece, positions] : possiblePositions )
@@ -1066,6 +1061,10 @@ void ChessPlayer::intelligentDecision()
 							decisionTaken = true;
 							m_currentMovementIndex = i;
 							m_preMessage = "JAKE!";
+
+							std::vector< int > possibleAssassins;
+							m_game->getPossibleAssassinsOf( m_currentPieceToMoveIndex, possibleAssassins );
+							assert( possibleAssassins.empty() );
 							break;
 						}
 					}
