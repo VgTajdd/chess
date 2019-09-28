@@ -2,7 +2,6 @@
 #include <vector>
 #include <map>
 #include "../chess/BaseItem.h"
-//#include "../chess/ChessPiece.h"
 
 class ChessBoard;
 class ChessGame;
@@ -34,6 +33,13 @@ public:
 	void eatRandomDecisionSafe();
 	void eatByHierarchyDecisionSafe();
 	void intelligentDecision();
+
+	const bool protect();
+	const bool makeJake();
+	const bool makeJakeMate();
+	const bool eatEnemySafe(); // Eat enemy (safe way).
+	const bool eatEnemyNotSafe(); // Eat enemy (not safe way).
+	const bool moveLessImportant(); // Move the less important piece to a safe place.
 
 	void waitForPieceDecision();
 	void waitForMovementDecision();
