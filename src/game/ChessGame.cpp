@@ -558,9 +558,9 @@ const int ChessGame::getIndexKing( const bool isBlack ) const
 	{
 		assert( m_board->existsPiece( indexPiece ) );
 		const auto& piece = m_board->piece( indexPiece );
-		if ( ( piece.isBlack() == isBlack ) || ( piece.type() == ChessPiece::KING ) )
+		if ( ( piece.isBlack() == isBlack ) && ( piece.type() == ChessPiece::KING ) )
 		{
-			indexKing = -1;
+			indexKing = indexPiece;
 			break;
 		}
 	}
@@ -579,6 +579,14 @@ void ChessGame::getCellState( const CellNode& node, bool& isEmpy, bool& isBlack 
 	{
 		isEmpy = true;
 	}
+}
+
+const bool ChessGame::isInJake( const bool isBlack ) const
+{
+	const int indexKing = getIndexKing( isBlack );
+	std::vector< int > possibleAssassinsOfKing;
+	getPossibleAssassinsOf( indexKing, possibleAssassinsOfKing );
+	return ( !possibleAssassinsOfKing.empty() );
 }
 
 //============================== ChessRules ===================================

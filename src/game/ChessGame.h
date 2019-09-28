@@ -159,6 +159,7 @@ public:
 	void getFriendsThatCanReach( std::vector< int >& friends, const CellNode& node, const bool isBlack );
 	const int getIndexKing( const bool isBlack ) const;
 	void getCellState( const CellNode& node, bool& isEmpy, bool& isBlack ) const;
+	const bool isInJake( const bool isBlack ) const;
 private:
 	ChessGameConfig m_config;
 	ChessBoard* m_board;
