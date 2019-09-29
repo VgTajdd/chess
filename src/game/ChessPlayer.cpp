@@ -25,7 +25,6 @@ ChessPlayer::~ChessPlayer()
 
 void ChessPlayer::gotoState( const int state )
 {
-	/*std::cout << "ChessPlayer::gotoState : " << state << std::endl;*/
 	BaseItem::gotoState( state );
 }
 
@@ -140,7 +139,7 @@ void ChessPlayer::chooseRandomPositionToMove()
 void ChessPlayer::waitForPieceToMove( const int dt )
 {
 	m_timerPieceInMovement += dt;
-	if ( m_timerPieceInMovement >= m_game->config().movementTime() )
+	if ( m_timerPieceInMovement >= m_game->settings().movementTime() )
 	{
 		gotoState( ChessPlayer::ST_EVALUATE_POSITION );
 	}
@@ -180,7 +179,7 @@ void ChessPlayer::generateDecision()
 	based on the current levelAI.
 	*/
 
-	switch ( m_game->config().levelAI() )
+	switch ( m_game->settings().levelAI() )
 	{
 		case 0: randomDecision(); break;
 		case 1: eatRandomDecision(); break;

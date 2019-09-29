@@ -6,14 +6,16 @@
 #include <algorithm>
 #include "../chess/ChessBoard.h"
 
-ChessGame::ChessGame():
+ChessGame::ChessGame( const ChessGameSettings& config ) :
 	m_board( nullptr ),
 	m_rules( nullptr ),
 	m_playerW( nullptr ),
 	m_playerB( nullptr ),
 	m_activePlayer( nullptr ),
 	m_finished( false ),
-	m_inInBlackTurn( false )
+	m_inInBlackTurn( false ),
+	m_settings( config ),
+	m_turnCounter( 0 )
 {
 	createGame();
 }
@@ -34,6 +36,8 @@ void ChessGame::clear()
 	m_playerW = nullptr;
 	m_playerB = nullptr;
 	m_activePlayer = nullptr;
+	m_inInBlackTurn = false;
+	m_turnCounter = 0;
 }
 
 void ChessGame::createGame()
@@ -43,8 +47,7 @@ void ChessGame::createGame()
 	m_playerB = new ChessPlayer( m_board, this, true );
 	m_rules = new ChessRules();
 
-	m_activePlayer = m_playerW;
-	m_activePlayer->startTurn();
+	togglePlayerInTurn();
 
 	std::srand( int( std::time( nullptr ) ) );
 
@@ -69,6 +72,7 @@ void ChessGame::togglePlayerInTurn()
 		m_activePlayer = m_playerW;
 	}
 	m_activePlayer->startTurn();
+	m_turnCounter++;
 }
 
 void ChessGame::update( const int dt )
@@ -79,7 +83,7 @@ void ChessGame::update( const int dt )
 	{
 		togglePlayerInTurn();
 	}
-	else if ( m_activePlayer->getState() == ChessPlayer::ST_WIN && m_config.infiniteLoop() )
+	else if ( m_activePlayer->getState() == ChessPlayer::ST_WIN && m_settings.infiniteLoop() )
 	{
 		resetGame();
 	}

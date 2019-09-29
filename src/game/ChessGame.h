@@ -8,13 +8,23 @@ class ChessBoard;
 class ChessGame;
 class ChessPlayer;
 
-struct ChessGameConfig
+struct ChessGameSettings
 {
-	ChessGameConfig() {};
+	ChessGameSettings( const bool infiniteLoop = true,
+					   const unsigned int movementTime = 100,
+					   const unsigned int humanPlayers = 0,
+					   const unsigned int levelAI = 4,
+					   const int decisionTimeAI = 0 ):
+		_infiniteLoop( infiniteLoop ),
+		_movementTime( movementTime ),
+		_humanPlayers( humanPlayers ),
+		_levelAI( levelAI ),
+		_decisionTimeAI( decisionTimeAI )
+	{};
 private:
-	unsigned int _humanPlayers = 0;
-	bool _infiniteLoop = true;
-	unsigned int _movementTime = 0; // 1000
+	bool _infiniteLoop;
+	unsigned int _movementTime;
+	unsigned int _humanPlayers;
 	/*--------AI--------
 	0: random
 	1: eats (if possible) random
@@ -22,8 +32,8 @@ private:
 	3: eats (if possible) by importance only safe
 	4: intelligent
 	------------------*/
-	unsigned int _levelAI = 4;
-	unsigned int _decisionTimeAI = 0;
+	unsigned int _levelAI;
+	unsigned int _decisionTimeAI;
 public:
 	const unsigned int humanPlayers() const;
 	const bool infiniteLoop() const;
@@ -32,27 +42,27 @@ public:
 	const unsigned int levelAI() const;
 };
 
-inline const unsigned int ChessGameConfig::humanPlayers() const
+inline const unsigned int ChessGameSettings::humanPlayers() const
 {
 	return _humanPlayers;
 }
 
-inline const bool ChessGameConfig::infiniteLoop() const
+inline const bool ChessGameSettings::infiniteLoop() const
 {
 	return _infiniteLoop;
 }
 
-inline const unsigned int ChessGameConfig::movementTime() const
+inline const unsigned int ChessGameSettings::movementTime() const
 {
 	return _movementTime;
 }
 
-inline const unsigned int ChessGameConfig::decisionTimeAI() const
+inline const unsigned int ChessGameSettings::decisionTimeAI() const
 {
 	return _decisionTimeAI;
 }
 
-inline const unsigned int ChessGameConfig::levelAI() const
+inline const unsigned int ChessGameSettings::levelAI() const
 {
 	return _levelAI;
 }
@@ -133,7 +143,7 @@ inline const std::vector< ChessPath* >& ChessRules::getPaths( const ChessPiece::
 class ChessGame
 {
 public:
-	ChessGame();
+	ChessGame( const ChessGameSettings& settings );
 	~ChessGame();
 	void update( const int dt );
 	void togglePlayerInTurn();
@@ -141,7 +151,7 @@ public:
 	void createGame();
 	void resetGame();
 	const std::vector< ChessPath* >& getPotentialPaths( const ChessPiece::TYPE ) const;
-	const ChessGameConfig& config() const;
+	const ChessGameSettings& settings() const;
 	const ChessRules* rules() const;
 	static const char* namePiece( const ChessPiece::TYPE );
 	const ChessPlayer* const player( const bool isBlack ) const;
@@ -161,7 +171,7 @@ public:
 	void getCellState( const CellNode& node, bool& isEmpy, bool& isBlack ) const;
 	const bool isInJake( const bool isBlack ) const;
 private:
-	ChessGameConfig m_config;
+	ChessGameSettings m_settings;
 	ChessBoard* m_board;
 	ChessPlayer* m_playerW;
 	ChessPlayer* m_playerB;
@@ -172,9 +182,9 @@ private:
 	int m_turnCounter;
 };
 
-inline const ChessGameConfig& ChessGame::config() const
+inline const ChessGameSettings& ChessGame::settings() const
 {
-	return m_config;
+	return m_settings;
 }
 
 inline const ChessRules* ChessGame::rules() const

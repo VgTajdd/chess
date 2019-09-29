@@ -19,7 +19,8 @@ Application::Application():
 	m_finished( false ),
 	m_game( nullptr )
 {
-	m_game = new ChessGame();
+	ChessGameSettings settings( true, 0, 0, 4 );
+	m_game = new ChessGame( settings );
 }
 
 Application::~Application()
