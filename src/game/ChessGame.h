@@ -1,7 +1,6 @@
 #pragma once
 #include <vector>
 #include <map>
-#include "../chess/BaseItem.h"
 #include "../chess/ChessPiece.h"
 
 class ChessBoard;
@@ -73,6 +72,7 @@ struct CellNode
 	int c;
 	CellNode() { r = 0; c = 0; }
 	CellNode( const int _r, const int _c ) : r( _r ), c( _c ) {}
+	CellNode( const CellNode& other ) : r( other.r ), c( other.c ) {}
 	bool operator==( const CellNode& a ) const
 	{
 		return ( r == a.r ) && ( c == a.c );
